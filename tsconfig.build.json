@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.json",
+
+  "compilerOptions": {
+    "outDir": "dist",
+    "sourceMap": false
+  },
+
+  "exclude": [
+    "node_modules", "dist", "src/tests","./external/vampify/src/create-template",
+    "./external/vampify/src/sandbox", "./external/vampify/src/core/vampify-test.ts"
+  ]
+}

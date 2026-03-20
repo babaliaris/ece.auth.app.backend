@@ -1,0 +1,35 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ESNext"],
+    "outDir": "dist",
+
+    /* Strictness */
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "skipLibCheck": true,
+
+    /* Module Interop */
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+
+    /* Path Aliases */
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "@vampify/core": ["./external/vampify/src/core/vampify.ts"],
+      "@vampify/test": ["./external/vampify/src/core/vampify-test.ts"],
+      "@vampify/env": ["./external/vampify/src/core/plugins/environment.ts"],
+      "@vampify/auth": ["./external/vampify/src/core/plugins/auth.ts"],
+      "@vampify/literals": ["./external/vampify/src/core/vampify-literals.ts"],
+      "@vampify/utils": ["./external/vampify/src/core/utilities/index.ts"]
+    }
+  },
+  "include": ["src/**/*.ts", "./external/vampify/src/core/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
+}
