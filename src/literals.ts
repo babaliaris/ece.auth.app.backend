@@ -13,6 +13,11 @@ export const ROUTE_ENDPOINTS =
     SWAGGER:
     {
         ROOT: "/docs"
+    },
+
+    USERS:
+    {
+        ROOT: "/users"
     }
 } as const;
 
