@@ -2,7 +2,7 @@ import { FastifyPluginAsync } from "fastify";
 import { ROUTE_ENDPOINTS } from "../literals.js"
 import { eq, and } from "drizzle-orm";
 import { v7 as uuidv7 } from "uuid";
-import { Type } from "@sinclair/typebox";
+import { Static, Type } from "@sinclair/typebox";
 import {
     VampifyInstance, VAMPIFY_LITERALS,
     VampifyStandardResponseErrors
@@ -16,6 +16,8 @@ import {
 import {
     t_users, t_devices
 } from "@/db/schema.js";
+
+import { EceJwtPayload } from "@/typescript/types/ece-types.js";
 
 
 
@@ -154,13 +156,29 @@ const users: FastifyPluginAsync = async (fastify: VampifyInstance): Promise<void
         }
 
         // Sign the payload.
-        return rep.vampifySignPayload(
+        const ONE_HOUR = 60 * 60;
+        const ONE_YEAR = 365 * 24 * 60 * 60;
+        return rep.vampifySignPayload<Static<typeof UserDataSchema>, EceJwtPayload>(
+            // User UUID.
             selectedUsers[0].m_uuid,
+
+            // A custom body payload for the response.
             {
-                m_uuid: selectedUsers[0].m_uuid,
-                m_email: selectedUsers[0].m_email
+                m_uuid  : selectedUsers[0].m_uuid,
+                m_email : selectedUsers[0].m_email
             },
-            req.body.m_device_id
+
+            // A custom payload for the JWT token, to be used at
+            // any protected endpoint.
+            {
+                device_id   : req.body.m_device_id,
+                expires     : req.body.m_device_id ? ONE_YEAR : ONE_HOUR,
+                jwt_data    :
+                {
+                    m_email : selectedUsers[0].m_email,
+                    m_role  : selectedUsers[0].m_role
+                }
+            }
         );
     });
 
@@ -175,6 +193,16 @@ const users: FastifyPluginAsync = async (fastify: VampifyInstance): Promise<void
             tags        : ['Users'],
             summary     : "Log Out",
             description : "Clears the session and removes the device token from the notification list.",
+            security    :
+            [
+                {
+                    BearerAuth      : [],
+                    NativeDeviceID  : []
+                },
+                { 
+                    cookieAuth      : []
+                } 
+            ],
             response    :
             {
                 204: Type.Null(),
