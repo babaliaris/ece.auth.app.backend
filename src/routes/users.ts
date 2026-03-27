@@ -32,7 +32,8 @@ const users: FastifyPluginAsync = async (fastify: VampifyInstance): Promise<void
             response    :
             {
                 201: UserDataSchema,
-                ...VampifyStandardResponseErrors
+                400: VampifyStandardResponseErrors[400],
+                409: VampifyStandardResponseErrors[409]
             }
         }
     },
@@ -77,7 +78,8 @@ const users: FastifyPluginAsync = async (fastify: VampifyInstance): Promise<void
                     token   : Type.Union([Type.String(), Type.Null()]),
                     body    : UserDataSchema
                 }),
-                ...VampifyStandardResponseErrors
+                400: VampifyStandardResponseErrors[400],
+                401: VampifyStandardResponseErrors[401]
             }
         }
     },
@@ -174,7 +176,8 @@ const users: FastifyPluginAsync = async (fastify: VampifyInstance): Promise<void
             response    :
             {
                 204: Type.Null(),
-                ...VampifyStandardResponseErrors
+                400: VampifyStandardResponseErrors[400],
+                401: VampifyStandardResponseErrors[401]
             }
         },
     }, 
