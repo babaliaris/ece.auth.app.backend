@@ -69,7 +69,9 @@ const users: FastifyPluginAsync = async (fastify: VampifyInstance): Promise<void
         {
             tags        : ['Users'],
             summary     : "Log In",
-            description : "Uses the credentials of the user to return a JTW token",
+            description : "If no device and platform data is provided, we assume a \
+            BROWSER loggin and return the session as HttpOnly cookie. \
+            Otherwise, we return the JTW token in the body.",
             body        : UserLoginSchema,
             response    :
             {
