@@ -20,11 +20,7 @@ export const t_users = mysqlTable('t_users',
   m_pass      : varchar("m_pass", {length: 60}).notNull(),
   m_role      : mysqlEnum("m_role", ["ADMIN", "PROFESSOR", "STUDENT"]).notNull().default("STUDENT"),
   m_created_at: datetime('m_created_at', { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`)
-}, (t)=>
-  [
-    index("idx_t_users_m_email").on(t.m_email)
-  ]
-);
+});
 
 
 

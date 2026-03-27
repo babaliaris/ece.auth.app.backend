@@ -17,19 +17,8 @@ export const ROUTE_ENDPOINTS =
 
     USERS:
     {
-        ROOT: "/users"
-    }
-} as const;
-
-
-
-export const DEBUG_MSG =
-{
-    REASON:
-    {
-        INTERNAL_SERVER_ERROR   : "INTERNAL_SERVER_ERROR",
-        ANAUTHORIZED            : "ANAUTHORIZED",
-        UNVERIFIED_USER         : "UNVERIFIED_USER",
-        NOT_FOUND               : "NOT_FOUND"
+        ROOT    : "/users",
+        LOGIN   : "/users/login",
+        LOGOUT  : "/users/logout"
     }
 } as const;
