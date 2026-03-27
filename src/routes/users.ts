@@ -1,20 +1,23 @@
 import { FastifyPluginAsync } from "fastify";
-import {
-    VampifyInstance,
-    VampifyStandardResponseErrors,
-    VAMPIFY_LITERALS
-} from "@vampify/literals";
 import { ROUTE_ENDPOINTS } from "../literals.js"
-
-import {
-    UserCreateSchema, UserDataSchema, UserLoginSchema
-} from "@/typescript/schemas/users.schema.js";
-
-import { t_users, t_devices} from "@/db/schema.js";
-
 import { eq, and } from "drizzle-orm";
 import { v7 as uuidv7 } from "uuid";
 import { Type } from "@sinclair/typebox";
+import {
+    VampifyInstance, VAMPIFY_LITERALS,
+    VampifyStandardResponseErrors
+} from "@vampify/literals";
+
+import {
+    UserCreateSchema, UserDataSchema,
+    UserLoginSchema
+} from "@/typescript/schemas/users.schema.js";
+
+import {
+    t_users, t_devices
+} from "@/db/schema.js";
+
+
 
 const users: FastifyPluginAsync = async (fastify: VampifyInstance): Promise<void>=>
 {
