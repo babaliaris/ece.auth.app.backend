@@ -1,4 +1,5 @@
 import { Type } from "@sinclair/typebox";
+import * as std_schemas from "./standard.schema.js";
 
 const email = Type.String(
 {
@@ -52,13 +53,6 @@ export const UserLoginSchema = Type.Object(
 
 export const UserDataSchema = Type.Object(
 {
-    m_uuid: Type.String(
-    {
-        description : "The unique identifier of this object.",
-        format      : "uuid",
-        minLength   : 36,
-        maxLength   : 36
-    }),
-
-    m_email: email
+    m_uuid      : std_schemas.uuid,
+    m_email     : email
 });
