@@ -23,6 +23,9 @@ import { EceJwtPayload } from "@/typescript/types/ece-types.js";
 
 const users: FastifyPluginAsync = async (fastify: VampifyInstance): Promise<void>=>
 {
+    /**
+     * Register.
+     */
     fastify.post(ROUTE_ENDPOINTS.USERS.ROOT,
     {
         schema:
@@ -42,7 +45,7 @@ const users: FastifyPluginAsync = async (fastify: VampifyInstance): Promise<void
     async (req, res)=>
     {
         const new_uuid = uuidv7();
-        
+
         // Insert the user.
         await fastify.db
         .insert(t_users)
@@ -61,10 +64,9 @@ const users: FastifyPluginAsync = async (fastify: VampifyInstance): Promise<void
     });
 
 
-    // TODO Update signPayload to accept the JTW expiration time, instead of getting it
-    // through the env vars. For NATIVE apps, make it so it never expires, and update
-    // vampifyAuthenticate to somehow check if the device id exists in t_devices, otherwise
-    // block the authorization.
+    /**
+     * Login.
+     */
     fastify.post(ROUTE_ENDPOINTS.USERS.LOGIN,
     {
         schema:
@@ -184,7 +186,9 @@ const users: FastifyPluginAsync = async (fastify: VampifyInstance): Promise<void
 
 
 
-
+    /**
+     * Logout.
+    */
     fastify.post(ROUTE_ENDPOINTS.USERS.LOGOUT,
     {
         preHandler  : [fastify.vampifyAuth],
