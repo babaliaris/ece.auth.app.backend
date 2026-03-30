@@ -8,6 +8,13 @@
       "when": 1774010208150,
       "tag": "0000_fuzzy_lady_vermin",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1774887717440,
+      "tag": "0001_wealthy_onslaught",
+      "breakpoints": true
     }
   ]
 }

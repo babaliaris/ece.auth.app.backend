@@ -11,6 +11,7 @@ import {
     registerLoginAsBrowserHelper,
     registerLoginAsNativeAppHelper
 } from '../test-helpers.js';
+import { t_users } from '@/db/schema.js';
 
 
 describe('Users Tests', () =>
@@ -25,11 +26,11 @@ describe('Users Tests', () =>
             const email = `browser_${Date.now()}@vampify.com`;
             const pass  = "Password@123";
 
-            const {user, cookie} = await registerLoginAsBrowserHelper(fastify,
+            const {cookie} = await registerLoginAsBrowserHelper(fastify,
             {
                 m_email: email, 
                 m_pass: pass
-            })
+            });
 
             // Logout
             const logoutRes = await e2e_setup.fastify.inject(
@@ -47,7 +48,7 @@ describe('Users Tests', () =>
 
     test('user post should fail (password requirments)', async () =>
     {
-        await e2e_setup.runInTransaction(async (fastify)=>
+        await e2e_setup.runInTransaction(async ()=>
         {
             const user_data: Static<typeof UserCreateSchema> =
             {
@@ -78,7 +79,7 @@ describe('Users Tests', () =>
             const device_id     = "test-uuid-device-123";
             const device_token  = "fcm-token-abc-123";
 
-            const {user, token} = await registerLoginAsNativeAppHelper(fastify,
+            const {token} = await registerLoginAsNativeAppHelper(fastify,
             {
                 m_email: email,
                 m_pass: pass
@@ -111,7 +112,7 @@ describe('Users Tests', () =>
 
     test('user should fail to Login as NATIVE APP (BAD REQUEST)', async () =>
     {
-        await e2e_setup.runInTransaction(async (fastify) =>
+        await e2e_setup.runInTransaction(async () =>
         {
             const email         = `native_${Date.now()}@vampify.com`;
             const pass          = "Password@123";
@@ -140,6 +141,36 @@ describe('Users Tests', () =>
                 }
             });
             assert.strictEqual(loginRes.statusCode, 400, "Should return bad request for not providing required device data");
+        });
+    });
+
+
+    test('user should have the correct data posted', async () =>
+    {
+        await e2e_setup.runInTransaction(async (fastify) =>
+        {
+            const email = `browser_${Date.now()}@vampify.com`;
+            const pass  = "Password@123";
+
+            await registerLoginAsBrowserHelper(fastify,
+            {
+                m_email: email, 
+                m_pass: pass
+            });
+            
+            // Select the data directly from the database
+            // because the registerLoginAsBrowserHelper result
+            // does not return every user property.
+            const selectRes = await fastify.db
+            .select()
+            .from(t_users)
+            .limit(1);
+
+            assert(selectRes && selectRes.length);
+            assert.strictEqual(selectRes.length, 1, "I only inserted one user");
+            assert(selectRes[0].m_uuid && typeof selectRes[0].m_uuid === "string");
+            assert.strictEqual(selectRes[0].m_email, email);
+            assert.strictEqual(selectRes[0].m_role, "STUDENT");
         });
     });
 
