@@ -1,15 +1,17 @@
 import assert from 'node:assert';
+import { eq } from 'drizzle-orm';
 import { LightMyRequestResponse } from 'fastify';
 import { VampifyInstance, VAMPIFY_LITERALS } from '@vampify/literals';
 import { Static } from '@sinclair/typebox';
 import { ROUTE_ENDPOINTS } from '@/literals.js';
-import { t_devices } from '@/db/schema.js';
+import { t_devices, t_users } from '@/db/schema.js';
 
 import {
     UserCreateSchema,
     UserDataSchema,
     UserLoginSchema
 } from '@/typescript/schemas/users.schema.js';
+import { UserRolesE } from '@/typescript/types/ece-types.js';
 
 
 
@@ -23,7 +25,8 @@ import {
  */
 export async function registerLoginAsBrowserHelper(
     fastify     : VampifyInstance,
-    user_data   : Static<typeof UserCreateSchema>
+    user_data   : Static<typeof UserCreateSchema>,
+    role        : UserRolesE = UserRolesE.STUDENT
 ): Promise<{user: Static<typeof UserDataSchema>, cookie: LightMyRequestResponse['cookies'][number]}>
 {
     // Create the user.
@@ -43,6 +46,20 @@ export async function registerLoginAsBrowserHelper(
     // Check the user POST response.
     assert.ok(response_user.m_uuid);
     assert.strictEqual(response_user.m_email, user_data.m_email);
+
+
+    // Update the role of the user.
+    const [updateResult] = await fastify.db
+    .update(t_users)
+    .set(
+    {
+          m_role: role
+    })
+    .where(
+        eq(t_users.m_uuid, response_user.m_uuid)
+    );
+    assert.strictEqual(updateResult.affectedRows, 1, "uuid should much exactly one row");
+
 
     // Login as Browser (no device info)
     const loginRes = await fastify.inject(
@@ -85,7 +102,8 @@ export async function registerLoginAsBrowserHelper(
 export async function registerLoginAsNativeAppHelper(
     fastify     : VampifyInstance,
     user_data   : Static<typeof UserCreateSchema>,
-    login_data  : Static<typeof UserLoginSchema>
+    login_data  : Static<typeof UserLoginSchema>,
+    role        : UserRolesE = UserRolesE.STUDENT
 ): Promise<{user: Static<typeof UserDataSchema>, token: string}>
 {
     // Create the user.
@@ -105,6 +123,18 @@ export async function registerLoginAsNativeAppHelper(
     // Check the user POST response.
     assert.ok(response_user.m_uuid);
     assert.strictEqual(response_user.m_email, user_data.m_email);
+
+    // Update the role of the user.
+    const [updateResult] = await fastify.db
+    .update(t_users)
+    .set(
+    {
+          m_role: role
+    })
+    .where(
+        eq(t_users.m_uuid, response_user.m_uuid)
+    );
+    assert.strictEqual(updateResult.affectedRows, 1, "uuid should much exactly one row");
 
     // Login as Native App.
     const loginRes = await fastify.inject(
@@ -135,3 +165,4 @@ export async function registerLoginAsNativeAppHelper(
         token : loginBody.token
     }
 }
+

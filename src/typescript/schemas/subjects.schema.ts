@@ -28,3 +28,4 @@ export const SubjectCreateRepSchema = Type.Object(
     m_name      : name,
     m_school    : school
 });
+
