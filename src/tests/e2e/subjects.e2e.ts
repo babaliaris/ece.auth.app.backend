@@ -18,7 +18,7 @@ describe('Subjects Tests', () =>
 {
     const e2e_setup = vampifySetupE2E(vampifyApp);
 
-    test('subject should POST (ADMIN)', async () =>
+    test('subject should POST 2 objects (ADMIN)', async () =>
     {
         await e2e_setup.runInTransaction(async (fastify) =>
         {
@@ -33,12 +33,19 @@ describe('Subjects Tests', () =>
             );
 
 
-            // New Subject Data.
-            const new_subject: Static<typeof SubjectCreateReqSchema> =
-            {
-                m_name: "Name",
-                m_school: "School"
-            };
+            // New Subjects Data array.
+            const new_subjects: Static<typeof SubjectCreateReqSchema>[] =
+            [
+                {
+                    m_name: "Name1",
+                    m_school: "School1"
+                },
+
+                {
+                    m_name: "Name2",
+                    m_school: "School2"
+                }
+            ];
 
 
             // POST a new subject.
@@ -46,19 +53,23 @@ describe('Subjects Tests', () =>
             {
                 method  : 'POST',
                 url     : ROUTE_ENDPOINTS.SUBJECTS.ROOT,
-                payload : new_subject,
+                payload : new_subjects,
                 cookies : { [VAMPIFY_LITERALS.PAYLOAD_COOKIE_NAME]: cookie.value }
             });
             assert.strictEqual(subjPostRes.statusCode, 201);
 
             // Check the response object.
-            const res_subject = subjPostRes.json<Static<typeof SubjectCreateRepSchema>>();
-            assert.ok(res_subject);
+            const res_subjects = subjPostRes.json<Static<typeof SubjectCreateRepSchema>[]>();
+            assert.ok(res_subjects && Array.isArray(res_subjects));
+            assert.strictEqual(res_subjects.length, 2);
 
             // Check the response properties.
-            assert(res_subject.m_uuid && typeof res_subject.m_uuid === "string");
-            assert.strictEqual(res_subject.m_name, new_subject.m_name);
-            assert.strictEqual(res_subject.m_school, new_subject.m_school);
+            for (let i = 0; i < 2; i++)
+            {
+              assert(res_subjects[i].m_uuid && typeof res_subjects[i].m_uuid === "string");
+              assert.strictEqual(res_subjects[i].m_name, new_subjects[i].m_name);
+              assert.strictEqual(res_subjects[i].m_school, new_subjects[i].m_school);
+            }
         });
     });
 
@@ -91,7 +102,7 @@ describe('Subjects Tests', () =>
             {
                 method  : 'POST',
                 url     : ROUTE_ENDPOINTS.SUBJECTS.ROOT,
-                payload : new_subject,
+                payload : [new_subject],
                 cookies : { [VAMPIFY_LITERALS.PAYLOAD_COOKIE_NAME]: cookie.value }
             });
             assert.strictEqual(subjPostRes.statusCode, 403, "Should be forbidden 403");

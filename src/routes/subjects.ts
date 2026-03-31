@@ -1,8 +1,8 @@
 import { FastifyPluginAsync } from "fastify";
 import { ROUTE_ENDPOINTS } from "../literals.js"
-import { sql } from "drizzle-orm";
+import { sql, InferInsertModel } from "drizzle-orm";
 import { v7 as uuidv7 } from "uuid";
-import { Type } from "@sinclair/typebox";
+import { Static, Type } from "@sinclair/typebox";
 import {
     VampifyInstance,
     VampifyStandardResponseErrors
@@ -13,7 +13,8 @@ import {
 } from "@/typescript/schemas/subjects.schema.js";
 
 import {
-    t_subjects
+    t_subjects,
+    t_users
 } from "@/db/schema.js";
 import { PaginationMetaDataSchema, PaginationQuerySchema } from "@/typescript/schemas/standard.schema.js";
 
@@ -22,7 +23,7 @@ import { PaginationMetaDataSchema, PaginationQuerySchema } from "@/typescript/sc
 const subjects: FastifyPluginAsync = async (fastify: VampifyInstance): Promise<void>=>
 {
     /**
-     * Create a new Subject.
+     * Create new Subjects.
      */
     fastify.post(ROUTE_ENDPOINTS.SUBJECTS.ROOT,
     {
@@ -46,10 +47,15 @@ const subjects: FastifyPluginAsync = async (fastify: VampifyInstance): Promise<v
                   cookieAuth      : []
               } 
           ],
-          body        : SubjectCreateReqSchema,
-          response    :
+          body        : Type.Array(SubjectCreateReqSchema,
           {
-              201: SubjectCreateRepSchema,
+            description : "An array of subject objects to be inserted",
+            maxItems    : 20,
+            minItems    : 1
+          }),
+          response:
+          {
+              201: Type.Array(SubjectCreateRepSchema),
               400: VampifyStandardResponseErrors[400],
               401: VampifyStandardResponseErrors[400],
               409: VampifyStandardResponseErrors[409]
@@ -58,23 +64,24 @@ const subjects: FastifyPluginAsync = async (fastify: VampifyInstance): Promise<v
     },
     async (req, res)=>
     {
-      // Insert.
-      const new_uuid = uuidv7();
-      await fastify.db
-      .insert(t_subjects)
-      .values(
+      // Prepare the data in one pass
+      const batched_items = req.body.map<InferInsertModel<typeof t_subjects>>((subj) =>
       {
-          m_uuid  : new_uuid,
-          m_name  : req.body.m_name,
-          m_school: req.body.m_school
+          const m_uuid = uuidv7();
+          return {
+              m_uuid,
+              m_name: subj.m_name,
+              m_school: subj.m_school
+          };
       });
 
-      return res.status(201).send(
-      {
-          m_uuid  : new_uuid,
-          m_name  : req.body.m_name,
-          m_school: req.body.m_school
-      });
+      // Perform the Batch Insert
+      await fastify.db
+      .insert(t_subjects)
+      .values(batched_items);
+
+      // Return the list.
+      return res.status(201).send(batched_items);
     });
 
 
