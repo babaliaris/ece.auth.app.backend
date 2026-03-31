@@ -12,6 +12,7 @@ import {
     UserLoginSchema
 } from '@/typescript/schemas/users.schema.js';
 import { UserRolesE } from '@/typescript/types/ece-types.js';
+import { SubjectCreateRepSchema, SubjectCreateReqSchema } from '@/typescript/schemas/subjects.schema.js';
 
 
 
@@ -164,5 +165,38 @@ export async function registerLoginAsNativeAppHelper(
         user  : response_user,
         token : loginBody.token
     }
+}
+
+
+export async function subjectsInsertHelper(
+  fastify : VampifyInstance,
+  cookie  : LightMyRequestResponse['cookies'][number],
+  subjects: Static<typeof SubjectCreateReqSchema>[]
+): Promise< Static<typeof SubjectCreateRepSchema>[] >
+{
+  // POST the new subjects.
+  const subjPostRes = await fastify.inject(
+  {
+      method  : 'POST',
+      url     : ROUTE_ENDPOINTS.SUBJECTS.ROOT,
+      payload : subjects,
+      cookies : { [VAMPIFY_LITERALS.PAYLOAD_COOKIE_NAME]: cookie.value }
+  });
+  assert.strictEqual(subjPostRes.statusCode, 201);
+
+  // Check the response object.
+  const res_subjects = subjPostRes.json<Static<typeof SubjectCreateRepSchema>[]>();
+  assert.ok(res_subjects && Array.isArray(res_subjects));
+  assert.strictEqual(res_subjects.length, subjects.length);
+
+  // Check the response properties.
+  for (let i = 0; i < subjects.length; i++)
+  {
+    assert(res_subjects[i].m_uuid && typeof res_subjects[i].m_uuid === "string");
+    assert.strictEqual(res_subjects[i].m_name, subjects[i].m_name);
+    assert.strictEqual(res_subjects[i].m_school, subjects[i].m_school);
+  }
+
+  return res_subjects;
 }
 

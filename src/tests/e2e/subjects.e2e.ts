@@ -9,6 +9,7 @@ import { VAMPIFY_LITERALS } from '@vampify/literals';
 
 import {
     registerLoginAsBrowserHelper,
+    subjectsInsertHelper,
 } from '../test-helpers.js';
 import { SubjectCreateRepSchema, SubjectCreateReqSchema } from '@/typescript/schemas/subjects.schema.js';
 import { UserRolesE } from '@/typescript/types/ece-types.js';
@@ -34,7 +35,7 @@ describe('Subjects Tests', () =>
 
 
             // New Subjects Data array.
-            const new_subjects: Static<typeof SubjectCreateReqSchema>[] =
+            const subjects: Static<typeof SubjectCreateReqSchema>[] =
             [
                 {
                     m_name: "Name1",
@@ -47,29 +48,9 @@ describe('Subjects Tests', () =>
                 }
             ];
 
-
-            // POST a new subject.
-            const subjPostRes = await e2e_setup.fastify.inject(
-            {
-                method  : 'POST',
-                url     : ROUTE_ENDPOINTS.SUBJECTS.ROOT,
-                payload : new_subjects,
-                cookies : { [VAMPIFY_LITERALS.PAYLOAD_COOKIE_NAME]: cookie.value }
-            });
-            assert.strictEqual(subjPostRes.statusCode, 201);
-
-            // Check the response object.
-            const res_subjects = subjPostRes.json<Static<typeof SubjectCreateRepSchema>[]>();
-            assert.ok(res_subjects && Array.isArray(res_subjects));
-            assert.strictEqual(res_subjects.length, 2);
-
-            // Check the response properties.
-            for (let i = 0; i < 2; i++)
-            {
-              assert(res_subjects[i].m_uuid && typeof res_subjects[i].m_uuid === "string");
-              assert.strictEqual(res_subjects[i].m_name, new_subjects[i].m_name);
-              assert.strictEqual(res_subjects[i].m_school, new_subjects[i].m_school);
-            }
+            // Insert and check.
+            const rep_subjects = await subjectsInsertHelper(fastify, cookie, subjects);
+            assert.strictEqual(rep_subjects.length, subjects.length);
         });
     });
 
