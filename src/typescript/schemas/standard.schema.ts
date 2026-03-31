@@ -1,4 +1,4 @@
-import { Type } from "@sinclair/typebox";
+import { Type, TSchema } from "@sinclair/typebox";
 
 export const uuid = Type.String(
 {
@@ -20,8 +20,8 @@ export const PaginationQuerySchema = Type.Object(
   m_page  : Type.Integer(
   {
         description: "The page number to be fetched",
-        minimum: 1,
-        default: 1
+        minimum: 0,
+        default: 0
   }),
 
   m_limit : Type.Integer(
@@ -45,7 +45,7 @@ export const PaginationMetaDataSchema = Type.Object(
   m_current_page: Type.Number(
   {
         description: "The current page you're looking at",
-        minimum: 1
+        minimum: 0
   }),
 
   m_limit: Type.Integer(
@@ -55,4 +55,19 @@ export const PaginationMetaDataSchema = Type.Object(
         maximum: 100
   })
 });
+
+
+
+export function paginationReplySchema<T extends TSchema>(data_schema: T)
+{
+  return Type.Object(
+  {
+    m_data: Type.Array(data_schema,
+    {
+          description: "The list of the returned objects"
+    }),
+
+    m_meta: PaginationMetaDataSchema
+  });
+}
 

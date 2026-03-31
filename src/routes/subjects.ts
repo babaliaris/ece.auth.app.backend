@@ -16,7 +16,7 @@ import {
     t_subjects,
     t_users
 } from "@/db/schema.js";
-import { PaginationMetaDataSchema, PaginationQuerySchema } from "@/typescript/schemas/standard.schema.js";
+import { PaginationMetaDataSchema, PaginationQuerySchema, paginationReplySchema } from "@/typescript/schemas/standard.schema.js";
 
 
 
@@ -50,7 +50,7 @@ const subjects: FastifyPluginAsync = async (fastify: VampifyInstance): Promise<v
           body        : Type.Array(SubjectCreateReqSchema,
           {
             description : "An array of subject objects to be inserted",
-            maxItems    : 20,
+            maxItems    : 100,
             minItems    : 1
           }),
           response:
@@ -114,11 +114,7 @@ const subjects: FastifyPluginAsync = async (fastify: VampifyInstance): Promise<v
           querystring : PaginationQuerySchema,
           response    :
           {
-              200: Type.Object(
-              {
-                  m_data: Type.Array(SubjectCreateRepSchema),
-                  m_meta: PaginationMetaDataSchema
-              }),
+              200: paginationReplySchema(SubjectCreateRepSchema),
               400: VampifyStandardResponseErrors[400],
               401: VampifyStandardResponseErrors[401]
           }
@@ -126,15 +122,15 @@ const subjects: FastifyPluginAsync = async (fastify: VampifyInstance): Promise<v
     },
     async (req, res)=>
     {
-      const offset = (req.query.m_page - 1) * req.query.m_limit;
+      const offset = req.query.m_page * req.query.m_limit;
 
       // Get the slice of data
       const subjects = await fastify.db
-          .select()
-          .from(t_subjects)
-          .limit(req.query.m_limit)
-          .offset(offset)
-          .orderBy(t_subjects.m_uuid);
+      .select()
+      .from(t_subjects)
+      .limit(req.query.m_limit)
+      .offset(offset)
+      .orderBy(t_subjects.m_uuid);
 
       // Get the total count.
       const [countResult] = await fastify.db
