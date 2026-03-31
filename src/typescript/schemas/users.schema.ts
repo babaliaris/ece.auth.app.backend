@@ -1,5 +1,5 @@
 import { Type } from "@sinclair/typebox";
-import * as std_schemas from "./standard.schema.js";
+import { std_schema_uuid } from "./standard.schema.js";
 
 const email = Type.String(
 {
@@ -53,6 +53,6 @@ export const UserLoginSchema = Type.Object(
 
 export const UserDataSchema = Type.Object(
 {
-    m_uuid      : std_schemas.uuid,
+    m_uuid      : std_schema_uuid,
     m_email     : email
 });

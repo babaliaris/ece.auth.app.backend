@@ -1,22 +1,27 @@
 import { FastifyPluginAsync } from "fastify";
 import { ROUTE_ENDPOINTS } from "../literals.js"
-import { sql, InferInsertModel } from "drizzle-orm";
+import { sql, InferInsertModel, eq } from "drizzle-orm";
 import { v7 as uuidv7 } from "uuid";
-import { Static, Type } from "@sinclair/typebox";
+import { Type } from "@sinclair/typebox";
 import {
     VampifyInstance,
     VampifyStandardResponseErrors
 } from "@vampify/literals";
 
 import {
-    SubjectCreateReqSchema, SubjectCreateRepSchema
+    SubjectCreateReqSchema, SubjectCreateRepSchema,
+    SubjectUpdateReqSchema
 } from "@/typescript/schemas/subjects.schema.js";
 
 import {
-    t_subjects,
-    t_users
+    t_subjects
 } from "@/db/schema.js";
-import { PaginationMetaDataSchema, PaginationQuerySchema, paginationReplySchema } from "@/typescript/schemas/standard.schema.js";
+
+import {
+    std_schema_uuid,
+  StdPaginationQuerySchema,
+  stdPaginationReplySchema
+} from "@/typescript/schemas/standard.schema.js";
 
 
 
@@ -57,7 +62,8 @@ const subjects: FastifyPluginAsync = async (fastify: VampifyInstance): Promise<v
           {
               201: Type.Array(SubjectCreateRepSchema),
               400: VampifyStandardResponseErrors[400],
-              401: VampifyStandardResponseErrors[400],
+              401: VampifyStandardResponseErrors[401],
+              403: VampifyStandardResponseErrors[403],
               409: VampifyStandardResponseErrors[409]
           }
       }
@@ -88,35 +94,20 @@ const subjects: FastifyPluginAsync = async (fastify: VampifyInstance): Promise<v
 
     /**
      * Get MANY subjects by pagination.
-     * Anyone can get the subjects.
+     * Anyone can get the subjects even guests.
      */
     fastify.get(ROUTE_ENDPOINTS.SUBJECTS.ROOT,
     {
-      preHandler  :
-      [
-          fastify.vampifyAuth
-      ],
-      schema      :
+      schema:
       {
           tags        : ['Subjects'],
           summary     : "Get all the subjects",
           description : "Get all the subjects",
-          security    :
-          [
-              {
-                  BearerAuth      : [],
-                  NativeDeviceID  : []
-              },
-              { 
-                  cookieAuth      : []
-              } 
-          ],
-          querystring : PaginationQuerySchema,
+          querystring : StdPaginationQuerySchema,
           response    :
           {
-              200: paginationReplySchema(SubjectCreateRepSchema),
+              200: stdPaginationReplySchema(SubjectCreateRepSchema),
               400: VampifyStandardResponseErrors[400],
-              401: VampifyStandardResponseErrors[401]
           }
       }
     },
@@ -149,6 +140,78 @@ const subjects: FastifyPluginAsync = async (fastify: VampifyInstance): Promise<v
             m_limit       : req.query.m_limit // Actuall rows returned.
           }
       });
+    });
+
+
+
+    /**
+     * Update a single subject.
+     */
+    fastify.patch(ROUTE_ENDPOINTS.SUBJECTS.patchSingle(),
+    {
+      preHandler  :
+      [
+          fastify.vampifyAuth,
+          fastify.eceAuthRequireRoles("ADMIN")
+      ],
+      schema      :
+      {
+        tags        : ['Subjects'],
+        summary     : "Update a subject",
+        description : "Update a subject",
+        security    :
+        [
+            {
+                BearerAuth      : [],
+                NativeDeviceID  : []
+            },
+            { 
+                cookieAuth      : []
+            } 
+        ],
+        params: Type.Object(
+        {
+            subject_uuid: std_schema_uuid
+        }),
+        body: SubjectUpdateReqSchema,
+        response:
+        {
+            204: Type.Null(),
+            400: VampifyStandardResponseErrors[400],
+            401: VampifyStandardResponseErrors[401],
+            403: VampifyStandardResponseErrors[403],
+            404: VampifyStandardResponseErrors[404]
+        }
+      }
+    },
+    async (req, res)=>
+    {
+      // Execute the update.
+      const [updateRes] = await fastify.db
+      .update(t_subjects)
+      .set(
+      {
+            m_name: req.body.m_name,
+            m_school: req.body.m_school
+      })
+      .where(
+          eq(t_subjects.m_uuid, req.params.subject_uuid)
+      );
+
+      // We should at least update one row.
+      // If not, then inform the caller with 
+      // a NOT FOUND error, so they will know.
+      fastify.vampifyAbort(
+        updateRes.affectedRows > 0,
+        404,
+        `Subject uuid=${req.params.subject_uuid} was not found`,
+        {
+          subject_uuid: req.params.subject_uuid,
+          subject: req.body
+        }
+      );
+
+      return res.status(204).send(null);
     });
 };
 

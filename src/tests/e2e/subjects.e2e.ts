@@ -6,14 +6,16 @@ import { vampifyApp } from "@/app.js";
 import { Static } from '@sinclair/typebox';
 import { ROUTE_ENDPOINTS } from "@/literals.js"
 import { VAMPIFY_LITERALS } from '@vampify/literals';
+import { eq } from 'drizzle-orm';
 
 import {
     registerLoginAsBrowserHelper,
     subjectsInsertHelper,
 } from '../test-helpers.js';
-import { SubjectCreateRepSchema, SubjectCreateReqSchema } from '@/typescript/schemas/subjects.schema.js';
+import { SubjectCreateRepSchema, SubjectCreateReqSchema, SubjectUpdateReqSchema } from '@/typescript/schemas/subjects.schema.js';
 import { UserRolesE } from '@/typescript/types/ece-types.js';
-import { paginationReplySchema } from '@/typescript/schemas/standard.schema.js';
+import { stdPaginationReplySchema } from '@/typescript/schemas/standard.schema.js';
+import { t_subjects } from '@/db/schema.js';
 
 
 describe('Subjects Tests', () =>
@@ -80,7 +82,7 @@ describe('Subjects Tests', () =>
 
 
             // POST a new subject.
-            const subjPostRes = await e2e_setup.fastify.inject(
+            const subjPostRes = await fastify.inject(
             {
                 method  : 'POST',
                 url     : ROUTE_ENDPOINTS.SUBJECTS.ROOT,
@@ -128,17 +130,16 @@ describe('Subjects Tests', () =>
             const totalPages  = Math.ceil(subjects.length / limit);
             for (let page = 0; page < totalPages; page++ )
             {
-              const subjGetRes = await e2e_setup.fastify.inject(
+              const subjGetRes = await fastify.inject(
               {
                   method  : 'GET',
                   url     : ROUTE_ENDPOINTS.SUBJECTS.ROOT,
                   query   : {m_page: String(page), m_limit: String(limit)},
-                  cookies : { [VAMPIFY_LITERALS.PAYLOAD_COOKIE_NAME]: cookie.value }
               });
               assert.strictEqual(subjGetRes.statusCode, 200);
 
               // Get the pagination response and check it.
-              const repSchema = paginationReplySchema(SubjectCreateRepSchema);
+              const repSchema = stdPaginationReplySchema(SubjectCreateRepSchema);
               const get_res   = subjGetRes.json< Static<typeof repSchema>  >();
               assert(get_res && get_res.m_data && Array.isArray(get_res.m_data));
 
@@ -159,5 +160,162 @@ describe('Subjects Tests', () =>
     });
 
 
+    test('subject should GET no data (Empty List Pagination)', async () =>
+    {
+        await e2e_setup.runInTransaction(async (fastify) =>
+        {
+            //Do not add any data.
+
+            // Try to get the first page.
+            const subjGetRes = await fastify.inject(
+            {
+                method  : 'GET',
+                url     : ROUTE_ENDPOINTS.SUBJECTS.ROOT,
+                query   : {m_page: String(0), m_limit: String(10)},
+            });
+            assert.strictEqual(subjGetRes.statusCode, 200);
+
+            // Get the response data and check it.
+            const repSchema = stdPaginationReplySchema(SubjectCreateRepSchema);
+            const get_res   = subjGetRes.json< Static<typeof repSchema>  >();
+            assert(get_res && get_res.m_data && Array.isArray(get_res.m_data));
+
+            // Make sure the data property is an empty array.
+            assert.strictEqual(get_res.m_data.length, 0);
+
+            // Check the meta data.
+            assert.strictEqual(get_res.m_meta.m_limit, 10);
+            assert.strictEqual(get_res.m_meta.m_current_page, 0);
+            assert.strictEqual(get_res.m_meta.m_total_pages, 1);
+        });
+    });
+
+
+
+    test('subject should PATCH', async () =>
+    {
+        await e2e_setup.runInTransaction(async (fastify) =>
+        {
+            // Insert a user (ADMIN).
+            const {cookie} = await registerLoginAsBrowserHelper(
+              fastify,
+              {
+                m_email: `browser_${Date.now()}@vampify.com`,
+                m_pass: "Password@123"
+              },
+              UserRolesE.ADMIN
+            );
+
+
+            // New Subject.
+            const new_subj: Static<typeof SubjectCreateReqSchema> =
+            {
+                m_name: "Name",
+                m_school: "School"
+            };
+
+            // Insert the subjects.
+            const subjects = await subjectsInsertHelper(fastify, cookie, [new_subj]);
+            assert.strictEqual(subjects.length, 1);
+
+
+            // Update data.
+            const update_data: Static<typeof SubjectUpdateReqSchema> =
+            {
+                m_name: "Name_updated",
+                m_school: "School_updated"
+            };
+
+            // Update the subject.
+            const subjUpdateRes = await fastify.inject(
+            {
+                method  : 'PATCH',
+                url     : ROUTE_ENDPOINTS.SUBJECTS.patchSingle(subjects[0].m_uuid),
+                payload : update_data,
+                cookies : { [VAMPIFY_LITERALS.PAYLOAD_COOKIE_NAME]: cookie.value }
+            });
+            assert.strictEqual(subjUpdateRes.statusCode, 204);
+
+            // Select the updated subject.
+            const selected_subj = await fastify.db
+            .select()
+            .from(t_subjects)
+            .where(
+                eq(t_subjects.m_uuid, subjects[0].m_uuid)
+              );
+
+            // Check if the data where actually updated.
+            assert.strictEqual(selected_subj.length, 1);
+            assert.strictEqual(selected_subj[0].m_name, update_data.m_name);
+            assert.strictEqual(selected_subj[0].m_school, update_data.m_school);
+        });
+    });
+
+
+    test('subject should FAIL to PATCH (NO AUTH || NO ADMIN)', async () =>
+    {
+        await e2e_setup.runInTransaction(async (fastify) =>
+        {
+            // Insert a user (ADMIN).
+            const admin_session = await registerLoginAsBrowserHelper(
+              fastify,
+              {
+                m_email: `admin_${Date.now()}@vampify.com`,
+                m_pass: "Password@123"
+              },
+              UserRolesE.ADMIN
+            );
+
+
+            // Insert a user (STUDENT).
+            const student_session = await registerLoginAsBrowserHelper(
+              fastify,
+              {
+                m_email: `student_${Date.now()}@vampify.com`,
+                m_pass: "Password@123"
+              }
+            );
+
+            // New Subject.
+            const new_subj: Static<typeof SubjectCreateReqSchema> =
+            {
+                m_name: "Name",
+                m_school: "School"
+            };
+
+            // Insert the subjects.
+            const subjects = await subjectsInsertHelper(fastify, admin_session.cookie, [new_subj]);
+            assert.strictEqual(subjects.length, 1);
+
+
+            // Update data.
+            const update_data: Static<typeof SubjectUpdateReqSchema> =
+            {
+                m_name: "Name_updated",
+                m_school: "School_updated"
+            };
+
+
+            // Update the subject without a session.
+            const noSessionUpdateRes = await fastify.inject(
+            {
+                method  : 'PATCH',
+                url     : ROUTE_ENDPOINTS.SUBJECTS.patchSingle(subjects[0].m_uuid),
+                payload : update_data,
+            });
+            assert.strictEqual(noSessionUpdateRes.statusCode, 401, "Should be unauthorized");
+
+
+            // Update the subject using the student session.
+            const studentUpdateRes = await fastify.inject(
+            {
+                method  : 'PATCH',
+                url     : ROUTE_ENDPOINTS.SUBJECTS.patchSingle(subjects[0].m_uuid),
+                payload : update_data,
+                cookies : { [VAMPIFY_LITERALS.PAYLOAD_COOKIE_NAME]: student_session.cookie.value }
+            });
+            assert.strictEqual(studentUpdateRes.statusCode, 403, "Student should be forbiddent");
+        });
+    });
 });
 

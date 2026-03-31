@@ -1,6 +1,6 @@
 import { Type, TSchema } from "@sinclair/typebox";
 
-export const uuid = Type.String(
+export const std_schema_uuid = Type.String(
 {
     description : "The unique identifier of this object.",
     format      : "uuid",
@@ -8,14 +8,14 @@ export const uuid = Type.String(
     maxLength   : 36
 });
 
-export const created_at = Type.String(
+export const std_schema_created_at = Type.String(
 {
     description : "The datetime this object was created at",
     format      : "date-time"
 });
 
 
-export const PaginationQuerySchema = Type.Object(
+export const StdPaginationQuerySchema = Type.Object(
 {
   m_page  : Type.Integer(
   {
@@ -34,7 +34,7 @@ export const PaginationQuerySchema = Type.Object(
 });
 
 
-export const PaginationMetaDataSchema = Type.Object(
+export const StdPaginationMetaDataSchema = Type.Object(
 {
   m_total_pages:  Type.Number(
   {
@@ -58,7 +58,7 @@ export const PaginationMetaDataSchema = Type.Object(
 
 
 
-export function paginationReplySchema<T extends TSchema>(data_schema: T)
+export function stdPaginationReplySchema<T extends TSchema>(data_schema: T)
 {
   return Type.Object(
   {
@@ -67,7 +67,7 @@ export function paginationReplySchema<T extends TSchema>(data_schema: T)
           description: "The list of the returned objects"
     }),
 
-    m_meta: PaginationMetaDataSchema
+    m_meta: StdPaginationMetaDataSchema
   });
 }
 

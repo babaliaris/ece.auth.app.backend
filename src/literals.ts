@@ -24,12 +24,16 @@ export const ROUTE_ENDPOINTS =
 
     SUBJECTS:
     {
-        ROOT    : "/subjects",
-        get     : (subject_uuid?: string)=>subject_uuid ?
-            `/subjects/${subject_uuid}`:
-            `/subjects/:subject_uuid`,
-        delete  : (subject_uuid?: string)=>subject_uuid ?
-            `/subjects/${subject_uuid}`:
-            `/subjects/:subject_uuid`
+      ROOT    : "/subjects",
+      get     : (subject_uuid?: string)=>subject_uuid ?
+          `/subjects/${subject_uuid}`:
+          `/subjects/:subject_uuid`,
+      delete  : (subject_uuid?: string)=>subject_uuid ?
+          `/subjects/${subject_uuid}`:
+          `/subjects/:subject_uuid`,
+      patchSingle: (subject_uuid?: string)=>subject_uuid ?
+          `/subjects/${subject_uuid}`:
+          `/subjects/:subject_uuid`,
+
     }
 } as const;

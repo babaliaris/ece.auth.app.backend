@@ -1,5 +1,6 @@
 import { Type } from "@sinclair/typebox";
-import * as std_schemas from "./standard.schema.js";
+import { std_schema_uuid } from "./standard.schema.js";
+
 
 const name = Type.String(
 {
@@ -24,7 +25,15 @@ export const SubjectCreateReqSchema = Type.Object(
 
 export const SubjectCreateRepSchema = Type.Object(
 {
-    m_uuid      : std_schemas.uuid,
+    m_uuid      : std_schema_uuid,
+    m_name      : name,
+    m_school    : school
+});
+
+
+
+export const SubjectUpdateReqSchema = Type.Object(
+{
     m_name      : name,
     m_school    : school
 });
