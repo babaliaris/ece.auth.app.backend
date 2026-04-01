@@ -12,8 +12,19 @@ import {
     UserLoginSchema
 } from '@/typescript/schemas/users.schema.js';
 import { UserRolesE } from '@/typescript/types/ece-types.js';
-import { SubjectCreateRepSchema, SubjectCreateReqSchema } from '@/typescript/schemas/subjects.schema.js';
-import { ExamCreateRepSchema, ExamCreateReqSchema } from '@/typescript/schemas/exams.schema.js';
+
+import {
+  SubjectCreateRepSchema,
+  SubjectCreateReqSchema
+} from '@/typescript/schemas/subjects.schema.js';
+
+import {
+  ExamCreateRepSchema, ExamCreateReqSchema
+} from '@/typescript/schemas/exams.schema.js';
+
+import {
+  ExaminationCreateRepSchema, ExaminationCreateReqSchema
+} from '@/typescript/schemas/examinations.schema.js';
 
 
 
@@ -230,6 +241,42 @@ export async function examInsertHelper(
     assert(res_body[i].m_uuid && typeof res_body[i].m_uuid === "string");
     assert.strictEqual(res_body[i].m_semester, data[i].m_semester);
     assert.strictEqual(res_body[i].m_year, data[i].m_year);
+  }
+
+  return res_body;
+}
+
+
+
+export async function examinationsInsertHelper(
+  fastify : VampifyInstance,
+  cookie  : LightMyRequestResponse['cookies'][number],
+  data    : Static<typeof ExaminationCreateReqSchema>[]
+): Promise< Static<typeof ExaminationCreateRepSchema>[] >
+{
+  // POST.
+  const postRes = await fastify.inject(
+  {
+      method  : 'POST',
+      url     : ROUTE_ENDPOINTS.EXAMINATIONS.ROOT,
+      payload : data,
+      cookies : { [VAMPIFY_LITERALS.PAYLOAD_COOKIE_NAME]: cookie.value }
+  });
+  assert.strictEqual(postRes.statusCode, 201);
+
+  // Check the response object.
+  const res_body = postRes.json<Static<typeof ExaminationCreateRepSchema>[]>();
+  assert.ok(res_body && Array.isArray(res_body));
+  assert.strictEqual(res_body.length, data.length);
+
+  // Check the response properties.
+  for (let i = 0; i < data.length; i++)
+  {
+    assert(res_body[i].m_uuid && typeof res_body[i].m_uuid === "string");
+    assert.strictEqual(res_body[i].m_note, data[i].m_note);
+    assert.strictEqual(res_body[i].m_datetime, data[i].m_datetime);
+    assert.strictEqual(res_body[i].m_subject_uuid, data[i].m_subject_uuid);
+    assert.strictEqual(res_body[i].m_exam_uuid, data[i].m_exam_uuid);
   }
 
   return res_body;

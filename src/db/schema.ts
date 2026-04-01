@@ -129,7 +129,7 @@ export const t_subjects_exams = mysqlTable('t_subjects_exams',
 {
   m_uuid        : varchar("m_uuid", {length: 36}).primaryKey(),
   m_note        : text("m_note"),
-  m_datetime    : datetime('m_datetime', { mode: 'string' }).notNull(),
+  m_datetime    : datetime('m_datetime', { mode: 'date' }).notNull(),
   m_created_at  : datetime('m_created_at', { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
 
   m_subject_uuid: varchar("m_subject_uuid", {length: 36}).notNull().references(()=>t_subjects.m_uuid, {onDelete: "cascade"}),
