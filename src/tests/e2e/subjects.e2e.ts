@@ -27,13 +27,24 @@ describe('Subjects Tests', () =>
         await e2e_setup.runInTransaction(async (fastify) =>
         {
             // Insert a user (ADMIN).
-            const {cookie} = await registerLoginAsBrowserHelper(
+            const admin_session = await registerLoginAsBrowserHelper(
+              fastify,
+              {
+                m_email: `admin_${Date.now()}@vampify.com`,
+                m_pass: "Password@123"
+              },
+              UserRolesE.ADMIN
+            );
+
+
+            // Insert a user (STUDENT).
+            const student_session = await registerLoginAsBrowserHelper(
               fastify,
               {
                 m_email: `browser_${Date.now()}@vampify.com`,
                 m_pass: "Password@123"
               },
-              UserRolesE.ADMIN
+              UserRolesE.STUDENT
             );
 
 
@@ -51,48 +62,31 @@ describe('Subjects Tests', () =>
                 }
             ];
 
-            // Insert and check.
-            const rep_subjects = await subjectsInsertHelper(fastify, cookie, subjects);
-            assert.strictEqual(rep_subjects.length, subjects.length);
-        });
-    });
 
-
-
-    test('subject should FAIL to POST (NOT ADMIN)', async () =>
-    {
-        await e2e_setup.runInTransaction(async (fastify) =>
-        {
-            // Insert a user (DEFAULT ROLE IS STUDENT).
-            const {cookie} = await registerLoginAsBrowserHelper(
-              fastify,
-              {
-                m_email: `browser_${Date.now()}@vampify.com`,
-                m_pass: "Password@123"
-              }
-            );
-
-
-            // New Subject Data.
-            const new_subject: Static<typeof SubjectCreateReqSchema> =
-            {
-                m_name: "Name",
-                m_school: "School"
-            };
-
-
-            // POST a new subject.
-            const subjPostRes = await fastify.inject(
+            // POST without a session.
+            const no_session_post = await fastify.inject(
             {
                 method  : 'POST',
                 url     : ROUTE_ENDPOINTS.SUBJECTS.ROOT,
-                payload : [new_subject],
-                cookies : { [VAMPIFY_LITERALS.PAYLOAD_COOKIE_NAME]: cookie.value }
+                payload : subjects,
             });
-            assert.strictEqual(subjPostRes.statusCode, 403, "Should be forbidden 403");
+            assert.strictEqual(no_session_post.statusCode, 401, "Should be unauthorized");
+
+
+            // POST as student.
+            const student_post = await fastify.inject(
+            {
+                method  : 'POST',
+                url     : ROUTE_ENDPOINTS.SUBJECTS.ROOT,
+                payload : subjects,
+                cookies : { [VAMPIFY_LITERALS.PAYLOAD_COOKIE_NAME]: student_session.cookie.value }
+            });
+            assert.strictEqual(student_post.statusCode, 403, "Should be forbidden 403");
+
+            // Insert as Admin.
+            await subjectsInsertHelper(fastify, admin_session.cookie, subjects);
         });
     });
-
 
 
 
@@ -197,66 +191,6 @@ describe('Subjects Tests', () =>
         await e2e_setup.runInTransaction(async (fastify) =>
         {
             // Insert a user (ADMIN).
-            const {cookie} = await registerLoginAsBrowserHelper(
-              fastify,
-              {
-                m_email: `browser_${Date.now()}@vampify.com`,
-                m_pass: "Password@123"
-              },
-              UserRolesE.ADMIN
-            );
-
-
-            // New Subject.
-            const new_subj: Static<typeof SubjectCreateReqSchema> =
-            {
-                m_name: "Name",
-                m_school: "School"
-            };
-
-            // Insert the subjects.
-            const subjects = await subjectsInsertHelper(fastify, cookie, [new_subj]);
-            assert.strictEqual(subjects.length, 1);
-
-
-            // Update data.
-            const update_data: Static<typeof SubjectUpdateReqSchema> =
-            {
-                m_name: "Name_updated",
-                m_school: "School_updated"
-            };
-
-            // Update the subject.
-            const subjUpdateRes = await fastify.inject(
-            {
-                method  : 'PATCH',
-                url     : ROUTE_ENDPOINTS.SUBJECTS.patchSingle(subjects[0].m_uuid),
-                payload : update_data,
-                cookies : { [VAMPIFY_LITERALS.PAYLOAD_COOKIE_NAME]: cookie.value }
-            });
-            assert.strictEqual(subjUpdateRes.statusCode, 204);
-
-            // Select the updated subject.
-            const selected_subj = await fastify.db
-            .select()
-            .from(t_subjects)
-            .where(
-                eq(t_subjects.m_uuid, subjects[0].m_uuid)
-              );
-
-            // Check if the data where actually updated.
-            assert.strictEqual(selected_subj.length, 1);
-            assert.strictEqual(selected_subj[0].m_name, update_data.m_name);
-            assert.strictEqual(selected_subj[0].m_school, update_data.m_school);
-        });
-    });
-
-
-    test('subject should FAIL to PATCH (NO AUTH || NO ADMIN)', async () =>
-    {
-        await e2e_setup.runInTransaction(async (fastify) =>
-        {
-            // Insert a user (ADMIN).
             const admin_session = await registerLoginAsBrowserHelper(
               fastify,
               {
@@ -275,6 +209,7 @@ describe('Subjects Tests', () =>
                 m_pass: "Password@123"
               }
             );
+
 
             // New Subject.
             const new_subj: Static<typeof SubjectCreateReqSchema> =
@@ -315,6 +250,30 @@ describe('Subjects Tests', () =>
                 cookies : { [VAMPIFY_LITERALS.PAYLOAD_COOKIE_NAME]: student_session.cookie.value }
             });
             assert.strictEqual(studentUpdateRes.statusCode, 403, "Student should be forbiddent");
+
+
+            // Update the subject.
+            const subjUpdateRes = await fastify.inject(
+            {
+                method  : 'PATCH',
+                url     : ROUTE_ENDPOINTS.SUBJECTS.patchSingle(subjects[0].m_uuid),
+                payload : update_data,
+                cookies : { [VAMPIFY_LITERALS.PAYLOAD_COOKIE_NAME]: admin_session.cookie.value }
+            });
+            assert.strictEqual(subjUpdateRes.statusCode, 204);
+
+            // Select the updated subject.
+            const selected_subj = await fastify.db
+            .select()
+            .from(t_subjects)
+            .where(
+                eq(t_subjects.m_uuid, subjects[0].m_uuid)
+              );
+
+            // Check if the data where actually updated.
+            assert.strictEqual(selected_subj.length, 1);
+            assert.strictEqual(selected_subj[0].m_name, update_data.m_name);
+            assert.strictEqual(selected_subj[0].m_school, update_data.m_school);
         });
     });
 
