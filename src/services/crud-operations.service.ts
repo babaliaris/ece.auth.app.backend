@@ -11,7 +11,7 @@ import { StdPaginationQuerySchema} from "@/typescript/schemas/standard.schema.js
  * This function selects a "page" from the provided table
  * based on a pagination selection technique.
  *
- * @param fastify The fastify instance.
+ * @param fastify The VampifyInstance.
  * @param table The table object.
  * @param options The pagination options.
  *
@@ -54,6 +54,17 @@ export async function crudPaginationService<TrepSchema, Ttable extends MySqlTabl
 
 
 
+/**
+ * Update a table with new data.
+ *
+ * This function will update the provided table
+ * with the new given data.
+ *
+ * @param fastify The VampifyInstance.
+ * @param table The table to be updated.
+ * @param data The new data.
+ * @param uuid The uuid of the row to be updated.
+ */
 export async function crudUpdateService<Tdata = any, Ttable extends MySqlTable = any>(
     fastify : VampifyInstance,
     table   : Ttable,
@@ -99,6 +110,15 @@ export async function crudUpdateService<Tdata = any, Ttable extends MySqlTable =
 
 
 
+/**
+ * Delete a row of a table.
+ *
+ * This function will delete a specific row.
+ *
+ * @param fastify The VampifyInstance.
+ * @param table The table to delete from.
+ * @param uuid The uuid of the row to be deleted.
+ */
 export async function crudDeleteService<Ttable extends MySqlTable = any>(
     fastify : VampifyInstance,
     table   : Ttable,

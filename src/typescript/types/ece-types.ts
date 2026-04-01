@@ -5,6 +5,14 @@ export enum UserRolesE
   STUDENT="STUDENT"
 };
 
+
+export enum ExamSemesterE
+{
+  FALL="FALL",
+  SPRING="SPRING"
+};
+
+
 export type EceJwtPayload =
 {
     m_email : string,

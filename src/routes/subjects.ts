@@ -1,6 +1,6 @@
 import { FastifyPluginAsync } from "fastify";
 import { ROUTE_ENDPOINTS } from "../literals.js"
-import { InferInsertModel, eq } from "drizzle-orm";
+import { InferInsertModel} from "drizzle-orm";
 import { v7 as uuidv7 } from "uuid";
 import { Type, Static } from "@sinclair/typebox";
 import {
@@ -23,7 +23,11 @@ import {
   stdPaginationReplySchema
 } from "@/typescript/schemas/standard.schema.js";
 
-import { crudDeleteService, crudPaginationService, crudUpdateService } from "@/services/crud-operations.service.js";
+import {
+  crudDeleteService,
+  crudPaginationService,
+  crudUpdateService }
+from "@/services/crud-operations.service.js";
 
 
 const subjects: FastifyPluginAsync = async (fastify: VampifyInstance): Promise<void>=>
