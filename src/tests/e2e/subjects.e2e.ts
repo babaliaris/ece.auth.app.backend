@@ -1,4 +1,3 @@
-
 import { test, describe} from 'node:test';
 import assert from 'node:assert';
 import { vampifySetupE2E } from "@vampify/test";
@@ -6,6 +5,7 @@ import { vampifyApp } from "@/app.js";
 import { Static } from '@sinclair/typebox';
 import { ROUTE_ENDPOINTS } from "@/literals.js"
 import { VAMPIFY_LITERALS } from '@vampify/literals';
+import { v7 as uuidv7 } from "uuid";
 import { eq } from 'drizzle-orm';
 
 import {
@@ -315,6 +315,93 @@ describe('Subjects Tests', () =>
                 cookies : { [VAMPIFY_LITERALS.PAYLOAD_COOKIE_NAME]: student_session.cookie.value }
             });
             assert.strictEqual(studentUpdateRes.statusCode, 403, "Student should be forbiddent");
+        });
+    });
+
+
+
+    test('subject should be DELETED', async () =>
+    {
+        await e2e_setup.runInTransaction(async (fastify) =>
+        {
+            // Insert a user (ADMIN).
+            const admin_session = await registerLoginAsBrowserHelper(
+              fastify,
+              {
+                m_email: `admin_${Date.now()}@vampify.com`,
+                m_pass: "Password@123"
+              },
+              UserRolesE.ADMIN
+            );
+
+
+            // Insert a user (STUDENT).
+            const student_session = await registerLoginAsBrowserHelper(
+              fastify,
+              {
+                m_email: `student_${Date.now()}@vampify.com`,
+                m_pass: "Password@123"
+              }
+            );
+
+
+            // Try to delete the object that does not exist yet.
+            const no_object_del_res = await fastify.inject(
+            {
+                method  : 'DELETE',
+                url     : ROUTE_ENDPOINTS.SUBJECTS.delete(uuidv7()),
+                cookies : { [VAMPIFY_LITERALS.PAYLOAD_COOKIE_NAME]: admin_session.cookie.value }
+            });
+            assert.strictEqual(no_object_del_res.statusCode, 404, "Should not exist");
+
+            // New Subject.
+            const new_subj: Static<typeof SubjectCreateReqSchema> =
+            {
+                m_name: "Name",
+                m_school: "School"
+            };
+
+            // Insert the subjects.
+            const subjects = await subjectsInsertHelper(fastify, admin_session.cookie, [new_subj]);
+            assert.strictEqual(subjects.length, 1);
+
+
+            // Try to delete the subject without a session.
+            const no_session_del_res = await fastify.inject(
+            {
+                method  : 'DELETE',
+                url     : ROUTE_ENDPOINTS.SUBJECTS.delete(subjects[0].m_uuid)
+            });
+            assert.strictEqual(no_session_del_res.statusCode, 401, "Should be unauthorized");
+
+
+            // Try to delete the object as a student.
+            const student_del_res = await fastify.inject(
+            {
+                method  : 'DELETE',
+                url     : ROUTE_ENDPOINTS.SUBJECTS.delete(subjects[0].m_uuid),
+                cookies : { [VAMPIFY_LITERALS.PAYLOAD_COOKIE_NAME]: student_session.cookie.value }
+            });
+            assert.strictEqual(student_del_res.statusCode, 403, "Should be forbidden");
+
+
+            // Try to delete the object as the admin.
+            const admin_del_res = await fastify.inject(
+            {
+                method  : 'DELETE',
+                url     : ROUTE_ENDPOINTS.SUBJECTS.delete(subjects[0].m_uuid),
+                cookies : { [VAMPIFY_LITERALS.PAYLOAD_COOKIE_NAME]: admin_session.cookie.value }
+            });
+            assert.strictEqual(admin_del_res.statusCode, 204);
+
+            // Check that the object was actually deleted.
+            const selected_object = await fastify.db
+            .select()
+            .from(t_subjects)
+            .where(
+              eq(t_subjects.m_uuid, subjects[0].m_uuid)
+            );
+            assert.strictEqual(selected_object.length, 0);
         });
     });
 });

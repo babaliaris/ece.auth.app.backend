@@ -213,6 +213,68 @@ const subjects: FastifyPluginAsync = async (fastify: VampifyInstance): Promise<v
 
       return res.status(204).send(null);
     });
+
+
+    /**
+     * delete a single subject.
+     */
+    fastify.delete(ROUTE_ENDPOINTS.SUBJECTS.delete(),
+    {
+      preHandler  :
+      [
+          fastify.vampifyAuth,
+          fastify.eceAuthRequireRoles("ADMIN")
+      ],
+      schema      :
+      {
+        tags        : ['Subjects'],
+        summary     : "Delete a subject",
+        description : "Delete a subject",
+        security    :
+        [
+            {
+                BearerAuth      : [],
+                NativeDeviceID  : []
+            },
+            { 
+                cookieAuth      : []
+            } 
+        ],
+        params: Type.Object(
+        {
+            subject_uuid: std_schema_uuid
+        }),
+        response:
+        {
+            204: Type.Null(),
+            400: VampifyStandardResponseErrors[400],
+            401: VampifyStandardResponseErrors[401],
+            403: VampifyStandardResponseErrors[403],
+            404: VampifyStandardResponseErrors[404]
+        }
+      }
+    },
+    async (req, res)=>
+    {
+      // Execute the update.
+      const [updateRes] = await fastify.db
+      .delete(t_subjects)
+      .where(
+          eq(t_subjects.m_uuid, req.params.subject_uuid)
+      );
+
+      // Not found.
+      fastify.vampifyAbort(
+        updateRes.affectedRows === 1,
+        404,
+        `Subject uuid=${req.params.subject_uuid} was not found`,
+        {
+          subject_uuid: req.params.subject_uuid
+        }
+      );
+
+      return res.status(204).send(null);
+    });
 };
 
 export default subjects;
