@@ -19,11 +19,6 @@ import {
   stdPaginationReplySchema
 } from "@/typescript/schemas/standard.schema.js";
 
-import {
-  crudDeleteService,
-  crudPaginationService,
-  crudUpdateService
-} from "@/services/crud-operations.service.js";
 
 import {
   ExaminationCreateRepSchema,

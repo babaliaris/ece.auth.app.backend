@@ -1,6 +1,6 @@
 import { FastifyPluginAsync } from "fastify";
 import { ROUTE_ENDPOINTS } from "../literals.js"
-import { InferInsertModel} from "drizzle-orm";
+import { InferInsertModel, eq, asc, sql} from "drizzle-orm";
 import { v7 as uuidv7 } from "uuid";
 import { Type, Static } from "@sinclair/typebox";
 import {
@@ -22,13 +22,6 @@ import {
   StdPaginationQuerySchema,
   stdPaginationReplySchema
 } from "@/typescript/schemas/standard.schema.js";
-
-import {
-  crudDeleteService,
-  crudPaginationService,
-  crudUpdateService }
-from "@/services/crud-operations.service.js";
-
 
 const subjects: FastifyPluginAsync = async (fastify: VampifyInstance): Promise<void>=>
 {
@@ -120,14 +113,34 @@ const subjects: FastifyPluginAsync = async (fastify: VampifyInstance): Promise<v
   },
   async (req, res)=>
   {
-    type T              = Static<typeof SubjectCreateRepSchema>;
-    const {data, meta}  = await crudPaginationService<T>(fastify, t_subjects, req.query);
+      const table   = t_subjects;
+      const offset  = req.query.m_page * req.query.m_limit;
 
-    return res.status(200).send(
-    {
+      // Get the Data
+      const data = await fastify.db
+      .select()
+      .from(table)
+      .limit(req.query.m_limit)
+      .offset(offset)
+      .orderBy(asc(table.m_uuid));
+
+      // Get Count
+      const [countResult] = await fastify.db
+      .select({ count: sql<number>`count(*)` })
+      .from(table);
+
+      // Prepare and return the response.
+      const totalRows   = countResult.count;
+      const totalPages  = Math.ceil(totalRows / req.query.m_limit) || 1;
+      return res.status(200).send({
         m_data: data,
-        m_meta: meta
-    });
+        m_meta:
+        {
+            m_total_pages : totalPages,
+            m_current_page: req.query.m_page,
+            m_limit       : req.query.m_limit
+        }
+      });
   });
 
 
@@ -174,7 +187,42 @@ const subjects: FastifyPluginAsync = async (fastify: VampifyInstance): Promise<v
   },
   async (req, res)=>
   {
-    await crudUpdateService(fastify, t_subjects, req.body, req.params.subject_uuid);
+      const table = t_subjects;
+
+      // Execute the update.
+      const [updateRes] = await fastify.db
+      .update(table)
+      .set(req.body)
+      .where(
+          eq(table.m_uuid, req.params.subject_uuid)
+      );
+
+
+      // Using UUID to update a row MUST 
+      // result in only ONE affected row!!!
+      fastify.vampifyAbort(
+        updateRes.affectedRows <= 1,
+        500,
+        `Update uuid=${req.params.subject_uuid} affected more than one row!`,
+        {
+          uuid                : req.params.subject_uuid,
+          data                : req.body,
+          table               : table,
+          num_of_rows_affected: updateRes.affectedRows
+        }
+      );
+
+      // We should at least update one row!
+      fastify.vampifyAbort(
+        updateRes.affectedRows === 1,
+        404,
+        `Update uuid=${req.params.subject_uuid} was not found`,
+        {
+          uuid  : req.params.subject_uuid,
+          data  : req.body,
+          table : table
+        }
+      );
     return res.status(204).send(null);
   });
 
@@ -220,7 +268,38 @@ const subjects: FastifyPluginAsync = async (fastify: VampifyInstance): Promise<v
   },
   async (req, res)=>
   {
-      await crudDeleteService(fastify, t_subjects, req.params.subject_uuid)
+      const table = t_subjects;
+
+      // Execute the deletion query.
+      const [deleteRes] = await fastify.db
+      .delete(table)
+      .where(
+          eq((table as any).m_uuid, req.params.subject_uuid)
+      );
+
+      // Using UUID to delete a row MUST 
+      // result in only ONE affected row!!!
+      fastify.vampifyAbort(
+        deleteRes.affectedRows <= 1,
+        500,
+        `Update uuid=${req.params.subject_uuid} affected more than one row!`,
+        {
+          uuid                : req.params.subject_uuid,
+          table               : table,
+          num_of_rows_affected: deleteRes.affectedRows
+        }
+      );
+
+      // We should at least update one row!
+      fastify.vampifyAbort(
+        deleteRes.affectedRows === 1,
+        404,
+        `Update uuid=${req.params.subject_uuid} was not found`,
+        {
+          uuid  : req.params.subject_uuid,
+          table : table
+        }
+      );
       return res.status(204).send(null);
   });
 };
