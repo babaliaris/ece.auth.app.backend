@@ -2,7 +2,7 @@ import { FastifyPluginAsync } from "fastify";
 import { ROUTE_ENDPOINTS } from "../literals.js"
 import { InferInsertModel } from "drizzle-orm";
 import { v7 as uuidv7 } from "uuid";
-import { asc, sql } from "drizzle-orm";
+import { asc, sql, eq } from "drizzle-orm";
 import { Static, Type } from "@sinclair/typebox";
 import {
     VampifyInstance,
@@ -197,7 +197,46 @@ const examinations: FastifyPluginAsync = async (fastify: VampifyInstance): Promi
   },
   async (req, res)=>
   {
-      await crudUpdateService(fastify, t_subjects_exams, req.body, req.params.examination_uuid);
+      const table = t_subjects_exams;
+
+      // Execute the update.
+      const [updateRes] = await fastify.db
+      .update(table)
+      .set(
+      {
+            ...req.body,
+            m_datetime: req.body.m_datetime ? new Date(req.body.m_datetime): undefined
+      })
+      .where(
+          eq(table.m_uuid, req.params.examination_uuid)
+      );
+
+
+      // Using UUID to update a row MUST 
+      // result in only ONE affected row!!!
+      fastify.vampifyAbort(
+        updateRes.affectedRows <= 1,
+        500,
+        `Update uuid=${req.params.examination_uuid} affected more than one row!`,
+        {
+          uuid                : req.params.examination_uuid,
+          data                : req.body,
+          table               : table,
+          num_of_rows_affected: updateRes.affectedRows
+        }
+      );
+
+      // We should at least update one row!
+      fastify.vampifyAbort(
+        updateRes.affectedRows === 1,
+        404,
+        `Update uuid=${req.params.examination_uuid} was not found`,
+        {
+          uuid  : req.params.examination_uuid,
+          data  : req.body,
+          table : table
+        }
+      );
       return res.status(204).send(null);
   });
 
@@ -243,7 +282,38 @@ const examinations: FastifyPluginAsync = async (fastify: VampifyInstance): Promi
   },
   async (req, res)=>
   {
-      await crudDeleteService(fastify, t_subjects_exams, req.params.examination_uuid);
+      const table = t_subjects_exams;
+
+      // Execute the deletion query.
+      const [deleteRes] = await fastify.db
+      .delete(table)
+      .where(
+          eq((table as any).m_uuid, req.params.examination_uuid)
+      );
+
+      // Using UUID to delete a row MUST 
+      // result in only ONE affected row!!!
+      fastify.vampifyAbort(
+        deleteRes.affectedRows <= 1,
+        500,
+        `Update uuid=${req.params.examination_uuid} affected more than one row!`,
+        {
+          uuid                : req.params.examination_uuid,
+          table               : table,
+          num_of_rows_affected: deleteRes.affectedRows
+        }
+      );
+
+      // We should at least update one row!
+      fastify.vampifyAbort(
+        deleteRes.affectedRows === 1,
+        404,
+        `Update uuid=${req.params.examination_uuid} was not found`,
+        {
+          uuid  : req.params.examination_uuid,
+          table : table
+        }
+      );
       return res.status(204).send(null);
   });
 };

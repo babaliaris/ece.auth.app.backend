@@ -16,10 +16,9 @@ import {
 } from '../test-helpers.js';
 import { UserRolesE } from '@/typescript/types/ece-types.js';
 import { stdPaginationReplySchema } from '@/typescript/schemas/standard.schema.js';
-import { t_exams } from '@/db/schema.js';
-import { ExamCreateReqSchema, ExamPaginationRepSchema, ExamUpdateReqSchema } from '@/typescript/schemas/exams.schema.js';
-import { ExaminationCreateReqSchema, ExaminationPaginationRepSchema } from '@/typescript/schemas/examinations.schema.js';
-import { SubjectCreateRepSchema, SubjectCreateReqSchema } from '@/typescript/schemas/subjects.schema.js';
+import { t_subjects_exams } from '@/db/schema.js';
+import { ExaminationCreateReqSchema, ExaminationPaginationRepSchema, ExaminationUpdateReqSchema } from '@/typescript/schemas/examinations.schema.js';
+import { SubjectCreateReqSchema } from '@/typescript/schemas/subjects.schema.js';
 
 
 describe('Examinations Tests', () =>
@@ -201,7 +200,7 @@ describe('Examinations Tests', () =>
 
 
 
-    test('exam should PATCH', async () =>
+    test('examination should PATCH', async () =>
     {
         await e2e_setup.runInTransaction(async (fastify) =>
         {
@@ -225,28 +224,48 @@ describe('Examinations Tests', () =>
               }
             );
 
+            // Add a subject.
+            const [subject] = await subjectsInsertHelper(fastify, admin_session.cookie,
+            [
+                {
+                  m_name: "subject",
+                  m_school: "school"
+                }
+            ]);
+
+            // Add an exam.
+            const [exam] = await examInsertHelper(fastify, admin_session.cookie,
+            [
+                {
+                  m_semester: "FALL",
+                  m_year    : 2026
+                }
+            ]);
+
             // New Data.
-            const new_data: Static<typeof ExamCreateReqSchema> =
+            const new_data: Static<typeof ExaminationCreateReqSchema> =
             {
-                m_semester: "SPRING",
-                m_year    : 2026
+                m_note        : "This is a note",
+                m_datetime    : new Date(Date.now()).toISOString(),
+                m_subject_uuid: subject.m_uuid,
+                m_exam_uuid   : exam.m_uuid
             };
 
-            // Insert the subjects.
-            const inserted_data = await examInsertHelper(fastify, admin_session.cookie, [new_data]);
+            // Insert the data.
+            const inserted_data = await examinationsInsertHelper(fastify, admin_session.cookie, [new_data]);
 
             // Update data.
-            const update_data: Static<typeof ExamUpdateReqSchema> =
+            const update_data: Static<typeof ExaminationUpdateReqSchema> =
             {
-                m_semester: "FALL",
-                m_year    : 2027
+                m_note        : "This is a NEW note",
+                m_datetime    : new Date(Date.now()).toISOString(),
             };
 
             // Try to update with no session..
             const noSessionUpdateRes = await fastify.inject(
             {
                 method  : 'PATCH',
-                url     : ROUTE_ENDPOINTS.EXAMS.patchSingle(inserted_data[0].m_uuid),
+                url     : ROUTE_ENDPOINTS.EXAMINATIONS.patchSingle(inserted_data[0].m_uuid),
                 payload : update_data,
             });
             assert.strictEqual(noSessionUpdateRes.statusCode, 401, "Should be unauthorized");
@@ -256,7 +275,7 @@ describe('Examinations Tests', () =>
             const studentUpdateRes = await fastify.inject(
             {
                 method  : 'PATCH',
-                url     : ROUTE_ENDPOINTS.EXAMS.patchSingle(inserted_data[0].m_uuid),
+                url     : ROUTE_ENDPOINTS.EXAMINATIONS.patchSingle(inserted_data[0].m_uuid),
                 payload : update_data,
                 cookies : { [VAMPIFY_LITERALS.PAYLOAD_COOKIE_NAME]: student_session.cookie.value }
             });
@@ -267,24 +286,29 @@ describe('Examinations Tests', () =>
             const updateRes = await fastify.inject(
             {
                 method  : 'PATCH',
-                url     : ROUTE_ENDPOINTS.EXAMS.patchSingle(inserted_data[0].m_uuid),
+                url     : ROUTE_ENDPOINTS.EXAMINATIONS.patchSingle(inserted_data[0].m_uuid),
                 payload : update_data,
                 cookies : { [VAMPIFY_LITERALS.PAYLOAD_COOKIE_NAME]: admin_session.cookie.value }
             });
+            console.log(`UPDATE DATA: `, updateRes.body);
             assert.strictEqual(updateRes.statusCode, 204);
 
             // Select the updated object.
             const selected_obj = await fastify.db
             .select()
-            .from(t_exams)
+            .from(t_subjects_exams)
             .where(
-                eq(t_exams.m_uuid, inserted_data[0].m_uuid)
+                eq(t_subjects_exams.m_uuid, inserted_data[0].m_uuid)
               );
 
             // Check if the data where actually updated.
             assert.strictEqual(selected_obj.length, 1);
-            assert.strictEqual(selected_obj[0].m_semester, update_data.m_semester);
-            assert.strictEqual(selected_obj[0].m_year, update_data.m_year);
+            assert.strictEqual(selected_obj[0].m_note, update_data.m_note);
+            assert.strictEqual(selected_obj[0].m_datetime.toISOString(), update_data.m_datetime);
+
+            // These should NOT be UPDATED.
+            assert.strictEqual(selected_obj[0].m_subject_uuid, new_data.m_subject_uuid);
+            assert.strictEqual(selected_obj[0].m_exam_uuid, new_data.m_exam_uuid);
         });
     });
 
@@ -319,26 +343,46 @@ describe('Examinations Tests', () =>
             const no_object_del_res = await fastify.inject(
             {
                 method  : 'DELETE',
-                url     : ROUTE_ENDPOINTS.EXAMS.deleteSingle(uuidv7()),
+                url     : ROUTE_ENDPOINTS.EXAMINATIONS.deleteSingle(uuidv7()),
                 cookies : { [VAMPIFY_LITERALS.PAYLOAD_COOKIE_NAME]: admin_session.cookie.value }
             });
             assert.strictEqual(no_object_del_res.statusCode, 404, "Should not exist");
 
-            // New data.
-            const new_data: Static<typeof ExamCreateReqSchema> =
+            // Add a subject.
+            const [subject] = await subjectsInsertHelper(fastify, admin_session.cookie,
+            [
+                {
+                  m_name: "subject",
+                  m_school: "school"
+                }
+            ]);
+
+            // Add an exam.
+            const [exam] = await examInsertHelper(fastify, admin_session.cookie,
+            [
+                {
+                  m_semester: "FALL",
+                  m_year    : 2026
+                }
+            ]);
+
+            // New Data.
+            const new_data: Static<typeof ExaminationCreateReqSchema> =
             {
-                m_semester: "FALL",
-                m_year    : 2026
+                m_note        : "This is a note",
+                m_datetime    : new Date(Date.now()).toISOString(),
+                m_subject_uuid: subject.m_uuid,
+                m_exam_uuid   : exam.m_uuid
             };
 
-            // Insert the subjects.
-            const inserted_data = await examInsertHelper(fastify, admin_session.cookie, [new_data]);
+            // Insert the data.
+            const inserted_data = await examinationsInsertHelper(fastify, admin_session.cookie, [new_data]);
 
             // Try to delete the subject without a session.
             const no_session_del_res = await fastify.inject(
             {
                 method  : 'DELETE',
-                url     : ROUTE_ENDPOINTS.EXAMS.deleteSingle(inserted_data[0].m_uuid)
+                url     : ROUTE_ENDPOINTS.EXAMINATIONS.deleteSingle(inserted_data[0].m_uuid)
             });
             assert.strictEqual(no_session_del_res.statusCode, 401, "Should be unauthorized");
 
@@ -347,7 +391,7 @@ describe('Examinations Tests', () =>
             const student_del_res = await fastify.inject(
             {
                 method  : 'DELETE',
-                url     : ROUTE_ENDPOINTS.EXAMS.deleteSingle(inserted_data[0].m_uuid),
+                url     : ROUTE_ENDPOINTS.EXAMINATIONS.deleteSingle(inserted_data[0].m_uuid),
                 cookies : { [VAMPIFY_LITERALS.PAYLOAD_COOKIE_NAME]: student_session.cookie.value }
             });
             assert.strictEqual(student_del_res.statusCode, 403, "Should be forbidden");
@@ -357,7 +401,7 @@ describe('Examinations Tests', () =>
             const admin_del_res = await fastify.inject(
             {
                 method  : 'DELETE',
-                url     : ROUTE_ENDPOINTS.EXAMS.deleteSingle(inserted_data[0].m_uuid),
+                url     : ROUTE_ENDPOINTS.EXAMINATIONS.deleteSingle(inserted_data[0].m_uuid),
                 cookies : { [VAMPIFY_LITERALS.PAYLOAD_COOKIE_NAME]: admin_session.cookie.value }
             });
             assert.strictEqual(admin_del_res.statusCode, 204);
@@ -365,9 +409,9 @@ describe('Examinations Tests', () =>
             // Check that the object was actually deleted.
             const selected_object = await fastify.db
             .select()
-            .from(t_exams)
+            .from(t_subjects_exams)
             .where(
-              eq(t_exams.m_uuid, inserted_data[0].m_uuid)
+              eq(t_subjects_exams.m_uuid, inserted_data[0].m_uuid)
             );
             assert.strictEqual(selected_object.length, 0);
         });
