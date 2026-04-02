@@ -200,7 +200,7 @@ const subjects: FastifyPluginAsync = async (fastify: VampifyInstance): Promise<v
 
       // Using UUID to update a row MUST 
       // result in only ONE affected row!!!
-      fastify.vampifyAbort(
+      req.vampifyAbort(
         updateRes.affectedRows <= 1,
         500,
         `Update uuid=${req.params.subject_uuid} affected more than one row!`,
@@ -213,7 +213,7 @@ const subjects: FastifyPluginAsync = async (fastify: VampifyInstance): Promise<v
       );
 
       // We should at least update one row!
-      fastify.vampifyAbort(
+      req.vampifyAbort(
         updateRes.affectedRows === 1,
         404,
         `Update uuid=${req.params.subject_uuid} was not found`,
@@ -279,7 +279,7 @@ const subjects: FastifyPluginAsync = async (fastify: VampifyInstance): Promise<v
 
       // Using UUID to delete a row MUST 
       // result in only ONE affected row!!!
-      fastify.vampifyAbort(
+      req.vampifyAbort(
         deleteRes.affectedRows <= 1,
         500,
         `Update uuid=${req.params.subject_uuid} affected more than one row!`,
@@ -291,7 +291,7 @@ const subjects: FastifyPluginAsync = async (fastify: VampifyInstance): Promise<v
       );
 
       // We should at least update one row!
-      fastify.vampifyAbort(
+      req.vampifyAbort(
         deleteRes.affectedRows === 1,
         404,
         `Update uuid=${req.params.subject_uuid} was not found`,

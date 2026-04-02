@@ -100,7 +100,7 @@ const users: FastifyPluginAsync = async (fastify: VampifyInstance): Promise<void
         );
 
         // User was not found.
-        fastify.vampifyAbort(
+        req.vampifyAbort(
         selectedUsers.length !== 0,
         401,
         `User email = ${req.body.m_email} , was NOT found`,
@@ -115,7 +115,7 @@ const users: FastifyPluginAsync = async (fastify: VampifyInstance): Promise<void
         );
 
         // Password did not match.
-        fastify.vampifyAbort(
+        req.vampifyAbort(
         check_password,
         401,
         `User email = ${req.body.m_email} , provided a wrong password`,
@@ -125,9 +125,9 @@ const users: FastifyPluginAsync = async (fastify: VampifyInstance): Promise<void
 
         // If device id is provided, this is a native app. Upload device information.
         if (req.body.m_device_id)
-        {   
+        {
             // Check that device required parameters are present.
-            fastify.vampifyAbort(
+            req.vampifyAbort(
                 req.body.m_platform && req.body.m_device_token,
                 400,
                 `Device ID was provided without the platform and the device token`,
@@ -137,14 +137,16 @@ const users: FastifyPluginAsync = async (fastify: VampifyInstance): Promise<void
                 }
             );
 
+            const uuid = uuidv7();
+
             await fastify.db
             .insert(t_devices)
             .values(
             {
-                m_uuid          : uuidv7(),
-                m_platform      : req.body.m_platform,
+                m_uuid          : uuid,
                 m_device_id     : req.body.m_device_id,
-                m_device_token  : req.body.m_device_token,
+                m_platform      : req.body.m_platform! as "ANDROID" | "IOS" | "BROWSER",
+                m_device_token  : req.body.m_device_token!,
                 m_user_uuid     : selectedUsers[0].m_uuid
             })
             .onDuplicateKeyUpdate(

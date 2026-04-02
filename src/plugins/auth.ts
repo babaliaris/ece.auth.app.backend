@@ -16,7 +16,7 @@ function requireRoles(
     return async (req: FastifyRequest, res: FastifyReply) =>
     {
         // Check that the payload and jtw data are defined.
-        fastify.vampifyAbort(
+        req.vampifyAbort(
             req.vampify_payload && req.vampify_payload.data,
             500,
             `Payload and its data should exist at this point.`,
@@ -31,7 +31,7 @@ function requireRoles(
         const jwt_data = req.vampify_payload.data as EceJwtPayload;
 
         // Check that the role matches.
-        fastify.vampifyAbort(
+        req.vampifyAbort(
             rolesArray.includes(jwt_data.m_role),
             403,
             `Access Denied: Required roles was not included in the roles array`,
