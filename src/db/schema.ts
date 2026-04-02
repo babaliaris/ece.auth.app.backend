@@ -19,7 +19,7 @@ export const t_users = mysqlTable('t_users',
   m_email     : varchar("m_email", {length: 124}).notNull().unique(),
   m_pass      : varchar("m_pass", {length: 60}).notNull(),
   m_role      : mysqlEnum("m_role", ["ADMIN", "PROFESSOR", "STUDENT"]).notNull().default("STUDENT"),
-  m_created_at: datetime('m_created_at', { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`)
+  m_created_at: datetime('m_created_at', { mode: 'date', fsp: 3 }).default(sql`CURRENT_TIMESTAMP`)
 });
 
 
@@ -35,7 +35,7 @@ export const t_devices = mysqlTable('t_devices',
   m_platform      : mysqlEnum("m_platform", ["ANDROID", "IOS", "BROWSER"]).notNull(),
   m_device_id     : varchar("m_device_id", { length: 255 }).notNull(),
   m_device_token  : varchar("m_device_token", { length: 255 }).notNull().unique(),
-  m_created_at    : datetime('m_created_at', { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
+  m_created_at    : datetime('m_created_at', { mode: 'date', fsp: 3 }).default(sql`CURRENT_TIMESTAMP`),
 
   m_user_uuid     : varchar("m_user_uuid", {length: 36}).notNull().references(()=>t_users.m_uuid, {onDelete: "cascade"})
 }, (t)=>
@@ -66,7 +66,7 @@ export const t_notifications = mysqlTable('t_notifications',
   m_category      : varchar("m_category", { length: 64 }).notNull(),
   m_payload       : text("m_payload"),
   m_is_read       : boolean("m_is_read").default(false),
-  m_created_at    : datetime('m_created_at', { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
+  m_created_at    : datetime('m_created_at', { mode: 'date', fsp: 3 }).default(sql`CURRENT_TIMESTAMP`),
 
   m_user_uuid     : varchar("m_user_uuid", {length: 36}).notNull().references(()=>t_users.m_uuid, {onDelete: "cascade"}),
   m_device_uuid   : varchar("m_device_uuid", {length: 36}).notNull().references(()=>t_devices.m_uuid, {onDelete: "cascade"})
@@ -90,7 +90,7 @@ export const t_subjects = mysqlTable('t_subjects',
   m_uuid        : varchar("m_uuid", {length: 36}).primaryKey(),
   m_name        : varchar('m_name', {length: 255}).notNull(),
   m_school      : varchar('m_school', {length: 255}).notNull(),
-  m_created_at  : datetime('m_created_at', { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`)
+  m_created_at  : datetime('m_created_at', { mode: 'date', fsp: 3 }).default(sql`CURRENT_TIMESTAMP`)
 }, (t)=>
   [
     index("idx_t_subjects_m_name").on(t.m_name),
@@ -110,7 +110,7 @@ export const t_exams = mysqlTable('t_exams',
   m_uuid        : varchar("m_uuid", {length: 36}).primaryKey(),
   m_semester    : mysqlEnum("m_semester", ["FALL", "SPRING"]).notNull(),
   m_year        : smallint('m_year', {unsigned: true}).notNull(),
-  m_created_at  : datetime('m_created_at', { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`)
+  m_created_at  : datetime('m_created_at', { mode: 'date', fsp: 3 }).default(sql`CURRENT_TIMESTAMP`)
 }, (t)=>
   [
     unique("unq_t_exams_m_semester_m_year").on(t.m_semester, t.m_year)
@@ -130,7 +130,7 @@ export const t_subjects_exams = mysqlTable('t_subjects_exams',
   m_uuid        : varchar("m_uuid", {length: 36}).primaryKey(),
   m_note        : text("m_note"),
   m_datetime    : datetime('m_datetime', { mode: 'date', fsp: 3 }).notNull(),
-  m_created_at  : datetime('m_created_at', { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
+  m_created_at  : datetime('m_created_at', { mode: 'date', fsp: 3 }).default(sql`CURRENT_TIMESTAMP`),
 
   m_subject_uuid: varchar("m_subject_uuid", {length: 36}).notNull().references(()=>t_subjects.m_uuid, {onDelete: "cascade"}),
   m_exam_uuid   : varchar("m_exam_uuid", {length: 36}).notNull().references(()=>t_exams.m_uuid, {onDelete: "cascade"})
@@ -153,7 +153,7 @@ export const t_users_subjects_exams = mysqlTable('t_users_subjects_exams',
 {
   m_uuid        : varchar("m_uuid", {length: 36}).primaryKey(),
   m_note        : text("m_note"),
-  m_created_at  : datetime('m_created_at', { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
+  m_created_at  : datetime('m_created_at', { mode: 'date', fsp: 3 }).default(sql`CURRENT_TIMESTAMP`),
 
   m_user_uuid           : varchar("m_user_uuid", {length: 36}).notNull().references(()=>t_users.m_uuid, {onDelete: "cascade"}),
   m_subjects_exams_uuid : varchar("m_subjects_exams_uuid", {length: 36}).notNull()
