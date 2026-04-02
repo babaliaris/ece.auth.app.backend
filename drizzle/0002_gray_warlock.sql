@@ -1,0 +1,1 @@
+ALTER TABLE `t_subjects_exams` MODIFY COLUMN `m_datetime` datetime(3) NOT NULL;

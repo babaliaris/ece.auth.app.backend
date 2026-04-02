@@ -15,6 +15,13 @@
       "when": 1774887717440,
       "tag": "0001_wealthy_onslaught",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1775130305423,
+      "tag": "0002_gray_warlock",
+      "breakpoints": true
     }
   ]
 }

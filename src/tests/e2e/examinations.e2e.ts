@@ -18,7 +18,8 @@ import { UserRolesE } from '@/typescript/types/ece-types.js';
 import { stdPaginationReplySchema } from '@/typescript/schemas/standard.schema.js';
 import { t_exams } from '@/db/schema.js';
 import { ExamCreateReqSchema, ExamPaginationRepSchema, ExamUpdateReqSchema } from '@/typescript/schemas/exams.schema.js';
-import { ExaminationCreateReqSchema } from '@/typescript/schemas/examinations.schema.js';
+import { ExaminationCreateReqSchema, ExaminationPaginationRepSchema } from '@/typescript/schemas/examinations.schema.js';
+import { SubjectCreateRepSchema, SubjectCreateReqSchema } from '@/typescript/schemas/subjects.schema.js';
 
 
 describe('Examinations Tests', () =>
@@ -105,7 +106,7 @@ describe('Examinations Tests', () =>
 
 
 
-    test('exam should POST 20 Objects & Get them through Pagination', async () =>
+    test('examination should POST 20 Objects & Get them through Pagination', async () =>
     {
         await e2e_setup.runInTransaction(async (fastify) =>
         {
@@ -119,20 +120,48 @@ describe('Examinations Tests', () =>
               UserRolesE.ADMIN
             );
 
+            // Add an exam.
+            const [exam] = await examInsertHelper(fastify, cookie,
+            [
+                {
+                  m_semester: "FALL",
+                  m_year    : 2026
+                }
+            ]);
 
-            // New Data array.
-            const data: Static<typeof ExamCreateReqSchema>[] = [];
-            for (let i = 0; i < 20; i++)
+            // Declare the total number of data.
+            const num_of_data: number = 20;
+
+            // Subjects Data to be inserted.
+            const subjects: Static<typeof SubjectCreateReqSchema>[] = [];
+            for (let i =0; i < num_of_data; i++)
+            {
+              subjects.push(
+              {
+                  m_name: `Subject${i}`,
+                  m_school: `Schoold${i}`
+              });
+            }
+
+            // Add the subjects.
+            const inserted_subjects = await subjectsInsertHelper(fastify, cookie, subjects);
+
+            // New Data
+            const data: Static<typeof ExaminationCreateReqSchema>[] = [];
+            for (let i =0; i < num_of_data; i++)
             {
               data.push(
               {
-                  m_semester  : "FALL",
-                  m_year      : i
+                  m_note        : `Note${i}`,
+                  m_datetime    : new Date(Date.now()).toISOString(),
+                  m_subject_uuid: inserted_subjects[i].m_uuid,
+                  m_exam_uuid   : exam.m_uuid
               });
-            };
+            }
 
-            // Insert the subjects.
-            await examInsertHelper(fastify, cookie, data);
+
+            // Insert the data.
+            await examinationsInsertHelper(fastify, cookie, data);
 
             // Paginate through the objects 5 time (5 pages).
             const limit       = 4;
@@ -142,13 +171,13 @@ describe('Examinations Tests', () =>
               const get_res = await fastify.inject(
               {
                   method  : 'GET',
-                  url     : ROUTE_ENDPOINTS.EXAMS.ROOT,
+                  url     : ROUTE_ENDPOINTS.EXAMINATIONS.ROOT,
                   query   : {m_page: String(page), m_limit: String(limit)},
               });
               assert.strictEqual(get_res.statusCode, 200);
 
               // Get the pagination response and check it.
-              const repSchema = stdPaginationReplySchema(ExamPaginationRepSchema);
+              const repSchema = stdPaginationReplySchema(ExaminationPaginationRepSchema);
               const get_body  = get_res.json< Static<typeof repSchema>  >();
               assert(get_body && get_body.m_data && Array.isArray(get_body.m_data));
 
@@ -161,8 +190,10 @@ describe('Examinations Tests', () =>
               for (let i = 0; i < get_body.m_data.length; i++)
               {
                 assert.ok(get_body.m_data[i].m_uuid && typeof get_body.m_data[i].m_uuid === "string");
-                assert.strictEqual(get_body.m_data[i].m_semester, data[page * limit + i].m_semester);
-                assert.strictEqual(get_body.m_data[i].m_year, data[page * limit + i].m_year);
+                assert.strictEqual(get_body.m_data[i].m_note, data[page * limit + i].m_note);
+                assert.strictEqual(get_body.m_data[i].m_datetime, data[page * limit + i].m_datetime);
+                assert.strictEqual(get_body.m_data[i].m_subject_uuid, data[page * limit + i].m_subject_uuid);
+                assert.strictEqual(get_body.m_data[i].m_exam_uuid, data[page * limit + i].m_exam_uuid);
               }
             }
         });

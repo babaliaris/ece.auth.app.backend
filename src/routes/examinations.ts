@@ -2,6 +2,7 @@ import { FastifyPluginAsync } from "fastify";
 import { ROUTE_ENDPOINTS } from "../literals.js"
 import { InferInsertModel } from "drizzle-orm";
 import { v7 as uuidv7 } from "uuid";
+import { asc, sql } from "drizzle-orm";
 import { Static, Type } from "@sinclair/typebox";
 import {
     VampifyInstance,
@@ -122,18 +123,33 @@ const examinations: FastifyPluginAsync = async (fastify: VampifyInstance): Promi
   },
   async (req, res)=>
   {
-      type T = Static<typeof ExaminationPaginationRepSchema>;
+      const table   = t_subjects_exams;
+      const offset  = req.query.m_page * req.query.m_limit;
 
-      const {data, meta} = await crudPaginationService<T>(
-        fastify,
-        t_subjects_exams,
-        req.query
-      );
+      // Get the Data
+      const data = await fastify.db
+      .select()
+      .from(table)
+      .limit(req.query.m_limit)
+      .offset(offset)
+      .orderBy(asc(table.m_uuid));
 
-      res.status(200).send(
-      {
-          m_data: data,
-          m_meta: meta
+      // Get Count
+      const [countResult] = await fastify.db
+      .select({ count: sql<number>`count(*)` })
+      .from(table);
+
+      // Prepare and return the response.
+      const totalRows   = countResult.count;
+      const totalPages  = Math.ceil(totalRows / req.query.m_limit) || 1;
+      return res.status(200).send({
+        m_data: data.map((val)=>({...val, m_datetime: val.m_datetime.toISOString()})),
+        m_meta:
+        {
+            m_total_pages : totalPages,
+            m_current_page: req.query.m_page,
+            m_limit       : req.query.m_limit
+        }
       });
   });
 
