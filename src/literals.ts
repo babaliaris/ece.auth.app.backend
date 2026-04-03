@@ -66,5 +66,21 @@ export const ROUTE_ENDPOINTS =
           `/examinations/${examination_uuid}`:
           `/examinations/:examination_uuid`,
 
+    },
+
+
+    STUDENT_EXAMINATIONS:
+    {
+      ROOT    : "/student_examinations",
+      get     : (student_examination_uuid?: string)=>student_examination_uuid ?
+          `/student_examinations/${student_examination_uuid}`:
+          `/student_examinations/:student_examination_uuid`,
+      deleteSingle  : (student_examination_uuid?: string)=>student_examination_uuid ?
+          `/student_examinations/${student_examination_uuid}`:
+          `/student_examinations/:student_examination_uuid`,
+      patchSingle: (student_examination_uuid?: string)=>student_examination_uuid ?
+          `/student_examinations/${student_examination_uuid}`:
+          `/student_examinations/:student_examination_uuid`,
+
     }
 } as const;

@@ -28,7 +28,7 @@ function requireRoles(
         );
 
         // Get the JWT Data.
-        const jwt_data = req.vampify_payload.data as EceJwtPayload;
+        const jwt_data = req.vampify_payload!.data as EceJwtPayload;
 
         // Check that the role matches.
         req.vampifyAbort(

@@ -25,6 +25,7 @@ import {
 import {
   ExaminationCreateRepSchema, ExaminationCreateReqSchema
 } from '@/typescript/schemas/examinations.schema.js';
+import { StudentExaminationCreateRepSchema, StudentExaminationCreateReqSchema } from '@/typescript/schemas/student-examinations.schema.js';
 
 
 
@@ -277,6 +278,40 @@ export async function examinationsInsertHelper(
     assert.strictEqual(res_body[i].m_datetime, data[i].m_datetime);
     assert.strictEqual(res_body[i].m_subject_uuid, data[i].m_subject_uuid);
     assert.strictEqual(res_body[i].m_exam_uuid, data[i].m_exam_uuid);
+  }
+
+  return res_body;
+}
+
+
+
+export async function studentExaminationsInsertHelper(
+  fastify : VampifyInstance,
+  cookie  : LightMyRequestResponse['cookies'][number],
+  data    : Static<typeof StudentExaminationCreateReqSchema>[]
+): Promise< Static<typeof StudentExaminationCreateRepSchema>[] >
+{
+  // POST.
+  const postRes = await fastify.inject(
+  {
+      method  : 'POST',
+      url     : ROUTE_ENDPOINTS.STUDENT_EXAMINATIONS.ROOT,
+      payload : data,
+      cookies : { [VAMPIFY_LITERALS.PAYLOAD_COOKIE_NAME]: cookie.value }
+  });
+  assert.strictEqual(postRes.statusCode, 201);
+
+  // Check the response object.
+  const res_body = postRes.json<Static<typeof StudentExaminationCreateRepSchema>[]>();
+  assert.ok(res_body && Array.isArray(res_body));
+  assert.strictEqual(res_body.length, data.length);
+
+  // Check the response properties.
+  for (let i = 0; i < data.length; i++)
+  {
+    assert(res_body[i].m_uuid && typeof res_body[i].m_uuid === "string");
+    assert.strictEqual(res_body[i].m_note, data[i].m_note);
+    assert.strictEqual(res_body[i].m_subjects_exams_uuid, data[i].m_subjects_exams_uuid);
   }
 
   return res_body;
