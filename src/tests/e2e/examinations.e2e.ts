@@ -290,7 +290,6 @@ describe('Examinations Tests', () =>
                 payload : update_data,
                 cookies : { [VAMPIFY_LITERALS.PAYLOAD_COOKIE_NAME]: admin_session.cookie.value }
             });
-            console.log(`UPDATE DATA: `, updateRes.body);
             assert.strictEqual(updateRes.statusCode, 204);
 
             // Select the updated object.
@@ -314,7 +313,7 @@ describe('Examinations Tests', () =>
 
 
 
-    test('subject should be DELETED', async () =>
+    test('examination should be DELETED', async () =>
     {
         await e2e_setup.runInTransaction(async (fastify) =>
         {

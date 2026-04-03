@@ -237,7 +237,7 @@ describe('Exams Tests', () =>
 
 
 
-    test('subject should be DELETED', async () =>
+    test('exam should be DELETED', async () =>
     {
         await e2e_setup.runInTransaction(async (fastify) =>
         {
