@@ -243,6 +243,49 @@ const users: FastifyPluginAsync = async (fastify: VampifyInstance): Promise<void
             .status(204)
             .send(null);
     });
+
+
+    /**
+     * Me.
+     */
+    fastify.get(ROUTE_ENDPOINTS.USERS.ME,
+    {
+        preHandler  : [fastify.vampifyAuth],
+        schema      :
+        {
+            tags        : ['Users'],
+            summary     : "Checks if the user session is valid",
+            description : "Use this from your front-end app, to check if a user session is valid",
+            security    :
+            [
+                {
+                    BearerAuth      : [],
+                    NativeDeviceID  : []
+                },
+                { 
+                    cookieAuth      : []
+                } 
+            ],
+            response    :
+            {
+                200: UserDataSchema,
+                400: VampifyStandardResponseErrors[400],
+                401: VampifyStandardResponseErrors[401]
+            }
+        },
+    }, 
+    async (req, rep) =>
+    {
+      const user_uuid = req.vampify_payload!.user_id;
+      const jwt_data  = req.vampify_payload!.data! as EceJwtPayload;
+
+      return rep.status(200).send(
+      {
+        m_uuid  : user_uuid,
+        m_email : jwt_data.m_email,
+        m_role  : jwt_data.m_role
+      });
+    });
 };
 
 export default users;

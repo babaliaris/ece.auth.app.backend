@@ -5,7 +5,7 @@ import { vampifyApp } from "@/app.js";
 import { Static } from '@sinclair/typebox';
 import { ROUTE_ENDPOINTS } from "@/literals.js"
 import { VAMPIFY_LITERALS } from '@vampify/literals';
-import { UserCreateSchema } from '@/typescript/schemas/users.schema.js';
+import { UserCreateSchema, UserDataSchema } from '@/typescript/schemas/users.schema.js';
 
 import {
     registerLoginAsBrowserHelper,
@@ -32,8 +32,23 @@ describe('Users Tests', () =>
                 m_pass: pass
             });
 
+
+            // Check /me session validation.
+            const getMeRes = await fastify.inject(
+            {
+                method  : 'GET',
+                url     : ROUTE_ENDPOINTS.USERS.ME,
+                cookies : { [VAMPIFY_LITERALS.PAYLOAD_COOKIE_NAME]: cookie.value }
+            });
+            assert.strictEqual(getMeRes.statusCode, 200);
+            const get_me_body = getMeRes.json<Static<typeof UserDataSchema>>();
+            assert.ok(get_me_body);
+            assert.strictEqual(get_me_body.m_email, email);
+            assert.strictEqual(get_me_body.m_role, "STUDENT");
+            assert.ok(get_me_body.m_uuid);
+
             // Logout
-            const logoutRes = await e2e_setup.fastify.inject(
+            const logoutRes = await fastify.inject(
             {
                 method  : 'POST',
                 url     : ROUTE_ENDPOINTS.USERS.LOGOUT,
@@ -91,6 +106,25 @@ describe('Users Tests', () =>
                 m_device_token  : device_token,
                 m_platform      : "ANDROID"
             });
+
+
+            // Check /me session validation.
+            const getMeRes = await fastify.inject(
+            {
+                method  : 'GET',
+                url     : ROUTE_ENDPOINTS.USERS.ME,
+                headers :
+                {
+                    'Authorization': `Bearer ${token}`,
+                    [VAMPIFY_LITERALS.X_NATIVE_DEVICE_ID]: device_id
+                }
+            });
+            assert.strictEqual(getMeRes.statusCode, 200);
+            const get_me_body = getMeRes.json<Static<typeof UserDataSchema>>();
+            assert.ok(get_me_body);
+            assert.strictEqual(get_me_body.m_email, email);
+            assert.strictEqual(get_me_body.m_role, "STUDENT");
+            assert.ok(get_me_body.m_uuid);
 
             // Logout (Must send Bearer Token AND Device ID Header)
             const logoutRes = await e2e_setup.fastify.inject(

@@ -19,7 +19,8 @@ export const ROUTE_ENDPOINTS =
     {
         ROOT    : "/users",
         LOGIN   : "/users/login",
-        LOGOUT  : "/users/logout"
+        LOGOUT  : "/users/logout",
+        ME      : "/users/me"
     },
 
     SUBJECTS:
