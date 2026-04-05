@@ -18,6 +18,17 @@ const pass = Type.String(
 });
 
 
+const role = Type.Union(
+[
+  Type.Literal("ADMIN"),
+  Type.Literal("PROFESSOR"),
+  Type.Literal("STUDENT")
+],
+{
+  description: "The user's role. It is used to identify resource access."
+});
+
+
 export const UserCreateSchema = Type.Object(
 {
     m_email : email,
@@ -54,5 +65,6 @@ export const UserLoginSchema = Type.Object(
 export const UserDataSchema = Type.Object(
 {
     m_uuid      : std_schema_uuid,
-    m_email     : email
+    m_email     : email,
+    m_role      : role
 });

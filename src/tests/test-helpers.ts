@@ -60,6 +60,7 @@ export async function registerLoginAsBrowserHelper(
     // Check the user POST response.
     assert.ok(response_user.m_uuid);
     assert.strictEqual(response_user.m_email, user_data.m_email);
+    assert.strictEqual(response_user.m_role, UserRolesE.STUDENT); // Default should be student.
 
 
     // Update the role of the user.
@@ -91,8 +92,12 @@ export async function registerLoginAsBrowserHelper(
     
     // For browsers, token should be null in body (it's in the cookie)
     //TODO REPLACE {token: string | null, body: any} with type provided by the vampify framework.
-    const loginBody = loginRes.json<{token: string | null, body: any}>();
+    const loginBody = loginRes.json<{token: string | null, body: Static<typeof UserDataSchema>}>();
     assert.strictEqual(loginBody.token, null);
+    assert.ok(loginBody.body);
+    assert.ok(loginBody.body.m_uuid);
+    assert.strictEqual(loginBody.body.m_email, user_data.m_email);
+    assert.strictEqual(loginBody.body.m_role, role, "The login role should be the updated one");
     
     // Extract cookie for the next request
     const cookie = loginRes.cookies.find(c => c.name === VAMPIFY_LITERALS.PAYLOAD_COOKIE_NAME);
@@ -137,6 +142,7 @@ export async function registerLoginAsNativeAppHelper(
     // Check the user POST response.
     assert.ok(response_user.m_uuid);
     assert.strictEqual(response_user.m_email, user_data.m_email);
+    assert.strictEqual(response_user.m_role, UserRolesE.STUDENT); // Default should be student.
 
     // Update the role of the user.
     const [updateResult] = await fastify.db
@@ -161,8 +167,13 @@ export async function registerLoginAsNativeAppHelper(
     assert.ok(loginRes.body);
     
     // Get the body and check the token property.
-    const loginBody = loginRes.json<{token: string | null, body: any}>();
+    const loginBody = loginRes.json<{token: string | null, body: Static<typeof UserDataSchema> }>();
     assert.ok(loginBody.token, "Native login should return token in body");
+    assert.ok(loginBody.body);
+    assert.ok(loginBody.body.m_uuid);
+    assert.strictEqual(loginBody.body.m_email, user_data.m_email);
+    assert.strictEqual(loginBody.body.m_role, role, "The login role should be the updated one");
+
 
     // Verify device exists in DB
     const deviceSelectRes = await fastify.db

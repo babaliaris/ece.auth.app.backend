@@ -59,7 +59,8 @@ const users: FastifyPluginAsync = async (fastify: VampifyInstance): Promise<void
         return res.status(201).send(
         {
             m_uuid  : new_uuid,
-            m_email : req.body.m_email
+            m_email : req.body.m_email,
+            m_role  : "STUDENT" // Default Role.
         })
     });
 
@@ -169,7 +170,8 @@ const users: FastifyPluginAsync = async (fastify: VampifyInstance): Promise<void
             // A custom body payload for the response.
             {
                 m_uuid  : selectedUsers[0].m_uuid,
-                m_email : selectedUsers[0].m_email
+                m_email : selectedUsers[0].m_email,
+                m_role  : selectedUsers[0].m_role
             },
 
             // A custom payload for the JWT token, to be used at
