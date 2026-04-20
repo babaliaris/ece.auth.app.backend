@@ -1,8 +1,8 @@
 import { FastifyPluginAsync } from "fastify";
 import { ROUTE_ENDPOINTS } from "../literals.js"
-import { InferInsertModel, eq, asc, sql} from "drizzle-orm";
+import { InferInsertModel, eq, asc, sql, like} from "drizzle-orm";
 import { v7 as uuidv7 } from "uuid";
-import { Type, Static } from "@sinclair/typebox";
+import { Type } from "@sinclair/typebox";
 import {
     VampifyInstance,
     VampifyStandardResponseErrors
@@ -113,34 +113,40 @@ const subjects: FastifyPluginAsync = async (fastify: VampifyInstance): Promise<v
   },
   async (req, res)=>
   {
-      const table   = t_subjects;
-      const offset  = req.query.m_page * req.query.m_limit;
+    const table   = t_subjects;
+    const offset  = req.query.m_page * req.query.m_limit;
 
-      // Get the Data
-      const data = await fastify.db
-      .select()
-      .from(table)
-      .limit(req.query.m_limit)
-      .offset(offset)
-      .orderBy(asc(table.m_uuid));
+    // Build the dynamic filter
+    // If m_search is "chem", this becomes: m_name LIKE "chem%"
+    const filters = req.query.m_search ? like(table.m_name, `${req.query.m_search}%`) : undefined;
 
-      // Get Count
-      const [countResult] = await fastify.db
-      .select({ count: sql<number>`count(*)` })
-      .from(table);
+    // Get the Data
+    const data = await fastify.db
+    .select()
+    .from(table)
+    .where(filters)
+    .limit(req.query.m_limit)
+    .offset(offset)
+    .orderBy(asc(table.m_name));
 
-      // Prepare and return the response.
-      const totalRows   = countResult.count;
-      const totalPages  = Math.ceil(totalRows / req.query.m_limit) || 1;
-      return res.status(200).send({
-        m_data: data,
-        m_meta:
-        {
-            m_total_pages : totalPages,
-            m_current_page: req.query.m_page,
-            m_limit       : req.query.m_limit
-        }
-      });
+    // Get Count
+    const [countResult] = await fastify.db
+    .select({ count: sql<number>`count(*)` })
+    .from(table)
+    .where(filters);
+
+    // Prepare and return the response.
+    const totalRows   = countResult.count;
+    const totalPages  = Math.ceil(totalRows / req.query.m_limit) || 1;
+    return res.status(200).send({
+      m_data: data,
+      m_meta:
+      {
+          m_total_pages : totalPages,
+          m_current_page: req.query.m_page,
+          m_limit       : req.query.m_limit
+      }
+    });
   });
 
 

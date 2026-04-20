@@ -30,7 +30,12 @@ export const StdPaginationQuerySchema = Type.Object(
         minimum: 1,
         maximum: 100,
         default: 100
-  })
+  }),
+
+  m_search: Type.Optional(Type.String(
+  {
+    description : "Search pattern to filter the results (starts with)"
+  }))
 });
 
 

@@ -119,6 +119,11 @@ describe('Subjects Tests', () =>
             // Insert the subjects.
             await subjectsInsertHelper(fastify, cookie, subjects);
 
+            // Sort alhabetically to keep testing predictable, since the endpoint
+            // will return the data alhabetically.
+            const subjects_sorted: Static<typeof SubjectCreateReqSchema>[] =
+            [...subjects].sort((a, b)=>a.m_name.localeCompare(b.m_name));
+
             // Paginate through the objects 5 time (5 pages).
             const limit       = 10;
             const totalPages  = Math.ceil(subjects.length / limit);
@@ -146,8 +151,8 @@ describe('Subjects Tests', () =>
               for (let i = 0; i < get_res.m_data.length; i++)
               {
                 assert.ok(get_res.m_data[i].m_uuid && typeof get_res.m_data[i].m_uuid === "string");
-                assert.strictEqual(get_res.m_data[i].m_name, subjects[page * limit + i].m_name);
-                assert.strictEqual(get_res.m_data[i].m_school, subjects[page * limit + i].m_school);
+                assert.strictEqual(get_res.m_data[i].m_name, subjects_sorted[page * limit + i].m_name);
+                assert.strictEqual(get_res.m_data[i].m_school, subjects_sorted[page * limit + i].m_school);
               }
             }
         });
@@ -181,6 +186,78 @@ describe('Subjects Tests', () =>
             assert.strictEqual(get_res.m_meta.m_limit, 10);
             assert.strictEqual(get_res.m_meta.m_current_page, 0);
             assert.strictEqual(get_res.m_meta.m_total_pages, 1);
+        });
+    });
+
+
+
+    test('subject should POST 4 Objects & Get 2 by search filter', async () =>
+    {
+        await e2e_setup.runInTransaction(async (fastify) =>
+        {
+            // Insert a user (ADMIN).
+            const {cookie} = await registerLoginAsBrowserHelper(
+              fastify,
+              {
+                m_email: `browser_${Date.now()}@vampify.com`,
+                m_pass: "Password@123"
+              },
+              UserRolesE.ADMIN
+            );
+
+
+            // New Subjects Data array.
+            const subjects: Static<typeof SubjectCreateReqSchema>[] =
+            [
+              {m_name: "Calculus 101", m_school: "ECE"},
+              {m_name: "Chemistry 101", m_school: "ECE"},
+              {m_name: "Probabilities 101", m_school: "ECE"},
+              {m_name: "AlChemy 101", m_school: "ECE"},
+            ];
+
+            // Insert the subjects.
+            await subjectsInsertHelper(fastify, cookie, subjects);
+
+            // Expected result should be the following and alphabetically.
+            const sub_expected_result: Static<typeof SubjectCreateReqSchema>[] =
+            [
+
+              {m_name: "Calculus 101", m_school: "ECE"},
+              {m_name: "Chemistry 101", m_school: "ECE"}
+            ].sort((a,b)=>a.m_name.localeCompare(b.m_name));
+
+            // Paginate through the objects 1 at a time (4 pages).
+            const limit    = 1;
+            let totalPages = 1000; // Use a LARGE initial number to enter the loop the first time.
+            for (let page = 0; page < totalPages; page++ )
+            {
+              const subjGetRes = await fastify.inject(
+              {
+                  method  : 'GET',
+                  url     : ROUTE_ENDPOINTS.SUBJECTS.ROOT,
+                  query   : {m_page: String(page), m_limit: String(limit), m_search: "C"},
+              });
+              assert.strictEqual(subjGetRes.statusCode, 200);
+
+              // Get the pagination response and check it.
+              const repSchema = stdPaginationReplySchema(SubjectCreateRepSchema);
+              const get_res   = subjGetRes.json< Static<typeof repSchema>  >();
+              assert(get_res && get_res.m_data && Array.isArray(get_res.m_data));
+
+              // Check the meta object.
+              assert.strictEqual(get_res.m_meta.m_current_page, page);
+              assert.strictEqual(get_res.m_meta.m_total_pages, 2, "The total pages should be 2, since there are only 2 subjects starting with 'C'");
+              assert.strictEqual(get_res.m_meta.m_limit, limit);
+
+              // Check the m_data.
+              assert.strictEqual(get_res.m_data.length, 1, "We paginated item by item, so each page should contain a UNIT list.");
+              assert.ok(get_res.m_data[0].m_uuid && typeof get_res.m_data[0].m_uuid === "string");
+              assert.strictEqual(get_res.m_data[0].m_name, sub_expected_result[page].m_name);
+              assert.strictEqual(get_res.m_data[0].m_school, sub_expected_result[page].m_school);
+
+              // Update the totalPages with what the api response gave us.
+              totalPages = get_res.m_meta.m_total_pages;
+            }
         });
     });
 
