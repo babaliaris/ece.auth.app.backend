@@ -1,6 +1,6 @@
 import { FastifyPluginAsync } from "fastify";
 import { ROUTE_ENDPOINTS } from "../literals.js"
-import { InferInsertModel, sql, eq, asc } from "drizzle-orm";
+import { InferInsertModel, sql, eq, desc } from "drizzle-orm";
 import { v7 as uuidv7 } from "uuid";
 import { Type } from "@sinclair/typebox";
 import {
@@ -124,7 +124,7 @@ const exams: FastifyPluginAsync = async (fastify: VampifyInstance): Promise<void
       .from(table)
       .limit(req.query.m_limit)
       .offset(offset)
-      .orderBy(asc(table.m_uuid));
+      .orderBy(desc(table.m_year), desc(table.m_created_at));
 
       // Get Count
       const [countResult] = await fastify.db

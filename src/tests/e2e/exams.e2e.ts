@@ -112,6 +112,12 @@ describe('Exams Tests', () =>
             // Insert the subjects.
             await examInsertHelper(fastify, cookie, data);
 
+
+            // Sort the data by descending year, because the PAGINATION endpoint
+            // will return them sorted as well by descending year!!!
+            const sorted_data: Static<typeof ExamCreateReqSchema>[] =
+            [...data].sort((a, b)=>b.m_year - a.m_year);
+
             // Paginate through the objects 5 time (5 pages).
             const limit       = 4;
             const totalPages  = Math.ceil(data.length / limit);
@@ -139,8 +145,8 @@ describe('Exams Tests', () =>
               for (let i = 0; i < get_body.m_data.length; i++)
               {
                 assert.ok(get_body.m_data[i].m_uuid && typeof get_body.m_data[i].m_uuid === "string");
-                assert.strictEqual(get_body.m_data[i].m_semester, data[page * limit + i].m_semester);
-                assert.strictEqual(get_body.m_data[i].m_year, data[page * limit + i].m_year);
+                assert.strictEqual(get_body.m_data[i].m_semester, sorted_data[page * limit + i].m_semester);
+                assert.strictEqual(get_body.m_data[i].m_year, sorted_data[page * limit + i].m_year);
               }
             }
         });

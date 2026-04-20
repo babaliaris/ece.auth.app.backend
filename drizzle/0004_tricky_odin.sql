@@ -1,0 +1,1 @@
+CREATE INDEX `index_t_exams_m_year_m_created_at` ON `t_exams` (`m_year`,`m_created_at`);

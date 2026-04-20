@@ -1,0 +1,607 @@
+{
+  "version": "5",
+  "dialect": "mysql",
+  "id": "4a056fa7-f9bb-4872-a4ad-e934321c08db",
+  "prevId": "aa34d0c1-ce6c-4103-bdd9-47fa4439ecd6",
+  "tables": {
+    "t_devices": {
+      "name": "t_devices",
+      "columns": {
+        "m_uuid": {
+          "name": "m_uuid",
+          "type": "varchar(36)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "m_platform": {
+          "name": "m_platform",
+          "type": "enum('ANDROID','IOS','BROWSER')",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "m_device_id": {
+          "name": "m_device_id",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "m_device_token": {
+          "name": "m_device_token",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "m_created_at": {
+          "name": "m_created_at",
+          "type": "datetime(3)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": "CURRENT_TIMESTAMP"
+        },
+        "m_user_uuid": {
+          "name": "m_user_uuid",
+          "type": "varchar(36)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "t_devices_m_user_uuid_t_users_m_uuid_fk": {
+          "name": "t_devices_m_user_uuid_t_users_m_uuid_fk",
+          "tableFrom": "t_devices",
+          "tableTo": "t_users",
+          "columnsFrom": [
+            "m_user_uuid"
+          ],
+          "columnsTo": [
+            "m_uuid"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "t_devices_m_uuid": {
+          "name": "t_devices_m_uuid",
+          "columns": [
+            "m_uuid"
+          ]
+        }
+      },
+      "uniqueConstraints": {
+        "t_devices_m_device_token_unique": {
+          "name": "t_devices_m_device_token_unique",
+          "columns": [
+            "m_device_token"
+          ]
+        },
+        "unq_t_devices_m_user_uuid_m_device_id": {
+          "name": "unq_t_devices_m_user_uuid_m_device_id",
+          "columns": [
+            "m_user_uuid",
+            "m_device_id"
+          ]
+        }
+      },
+      "checkConstraint": {}
+    },
+    "t_exams": {
+      "name": "t_exams",
+      "columns": {
+        "m_uuid": {
+          "name": "m_uuid",
+          "type": "varchar(36)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "m_semester": {
+          "name": "m_semester",
+          "type": "enum('FALL','SPRING')",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "m_year": {
+          "name": "m_year",
+          "type": "smallint unsigned",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "m_created_at": {
+          "name": "m_created_at",
+          "type": "datetime(3)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      },
+      "indexes": {
+        "index_t_exams_m_year_m_created_at": {
+          "name": "index_t_exams_m_year_m_created_at",
+          "columns": [
+            "m_year",
+            "m_created_at"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "t_exams_m_uuid": {
+          "name": "t_exams_m_uuid",
+          "columns": [
+            "m_uuid"
+          ]
+        }
+      },
+      "uniqueConstraints": {
+        "unq_t_exams_m_semester_m_year": {
+          "name": "unq_t_exams_m_semester_m_year",
+          "columns": [
+            "m_semester",
+            "m_year"
+          ]
+        }
+      },
+      "checkConstraint": {}
+    },
+    "t_notifications": {
+      "name": "t_notifications",
+      "columns": {
+        "m_uuid": {
+          "name": "m_uuid",
+          "type": "varchar(36)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "m_title": {
+          "name": "m_title",
+          "type": "varchar(128)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "m_body": {
+          "name": "m_body",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "m_category": {
+          "name": "m_category",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "m_payload": {
+          "name": "m_payload",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "m_is_read": {
+          "name": "m_is_read",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": false
+        },
+        "m_created_at": {
+          "name": "m_created_at",
+          "type": "datetime(3)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": "CURRENT_TIMESTAMP"
+        },
+        "m_user_uuid": {
+          "name": "m_user_uuid",
+          "type": "varchar(36)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "m_device_uuid": {
+          "name": "m_device_uuid",
+          "type": "varchar(36)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "idx_t_notifications_m_user_uuid_m_is_read": {
+          "name": "idx_t_notifications_m_user_uuid_m_is_read",
+          "columns": [
+            "m_user_uuid",
+            "m_is_read"
+          ],
+          "isUnique": false
+        },
+        "idx_t_notifications_m_created_at": {
+          "name": "idx_t_notifications_m_created_at",
+          "columns": [
+            "m_created_at"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "t_notifications_m_user_uuid_t_users_m_uuid_fk": {
+          "name": "t_notifications_m_user_uuid_t_users_m_uuid_fk",
+          "tableFrom": "t_notifications",
+          "tableTo": "t_users",
+          "columnsFrom": [
+            "m_user_uuid"
+          ],
+          "columnsTo": [
+            "m_uuid"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "t_notifications_m_device_uuid_t_devices_m_uuid_fk": {
+          "name": "t_notifications_m_device_uuid_t_devices_m_uuid_fk",
+          "tableFrom": "t_notifications",
+          "tableTo": "t_devices",
+          "columnsFrom": [
+            "m_device_uuid"
+          ],
+          "columnsTo": [
+            "m_uuid"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "t_notifications_m_uuid": {
+          "name": "t_notifications_m_uuid",
+          "columns": [
+            "m_uuid"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraint": {}
+    },
+    "t_subjects": {
+      "name": "t_subjects",
+      "columns": {
+        "m_uuid": {
+          "name": "m_uuid",
+          "type": "varchar(36)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "m_name": {
+          "name": "m_name",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "m_school": {
+          "name": "m_school",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "m_created_at": {
+          "name": "m_created_at",
+          "type": "datetime(3)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      },
+      "indexes": {
+        "idx_t_subjects_m_name": {
+          "name": "idx_t_subjects_m_name",
+          "columns": [
+            "m_name"
+          ],
+          "isUnique": false
+        },
+        "idx_t_subjects_m_school": {
+          "name": "idx_t_subjects_m_school",
+          "columns": [
+            "m_school"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "t_subjects_m_uuid": {
+          "name": "t_subjects_m_uuid",
+          "columns": [
+            "m_uuid"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraint": {}
+    },
+    "t_subjects_exams": {
+      "name": "t_subjects_exams",
+      "columns": {
+        "m_uuid": {
+          "name": "m_uuid",
+          "type": "varchar(36)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "m_note": {
+          "name": "m_note",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "m_datetime": {
+          "name": "m_datetime",
+          "type": "datetime(3)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "m_created_at": {
+          "name": "m_created_at",
+          "type": "datetime(3)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": "CURRENT_TIMESTAMP"
+        },
+        "m_subject_uuid": {
+          "name": "m_subject_uuid",
+          "type": "varchar(36)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "m_exam_uuid": {
+          "name": "m_exam_uuid",
+          "type": "varchar(36)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "idx_t_subjects_exams_m_datetime": {
+          "name": "idx_t_subjects_exams_m_datetime",
+          "columns": [
+            "m_datetime"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "t_subjects_exams_m_subject_uuid_t_subjects_m_uuid_fk": {
+          "name": "t_subjects_exams_m_subject_uuid_t_subjects_m_uuid_fk",
+          "tableFrom": "t_subjects_exams",
+          "tableTo": "t_subjects",
+          "columnsFrom": [
+            "m_subject_uuid"
+          ],
+          "columnsTo": [
+            "m_uuid"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "t_subjects_exams_m_exam_uuid_t_exams_m_uuid_fk": {
+          "name": "t_subjects_exams_m_exam_uuid_t_exams_m_uuid_fk",
+          "tableFrom": "t_subjects_exams",
+          "tableTo": "t_exams",
+          "columnsFrom": [
+            "m_exam_uuid"
+          ],
+          "columnsTo": [
+            "m_uuid"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "t_subjects_exams_m_uuid": {
+          "name": "t_subjects_exams_m_uuid",
+          "columns": [
+            "m_uuid"
+          ]
+        }
+      },
+      "uniqueConstraints": {
+        "unq_t_subjects_exams_m_subject_uuid_m_exam_uuid": {
+          "name": "unq_t_subjects_exams_m_subject_uuid_m_exam_uuid",
+          "columns": [
+            "m_subject_uuid",
+            "m_exam_uuid"
+          ]
+        }
+      },
+      "checkConstraint": {}
+    },
+    "t_users": {
+      "name": "t_users",
+      "columns": {
+        "m_uuid": {
+          "name": "m_uuid",
+          "type": "varchar(36)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "m_email": {
+          "name": "m_email",
+          "type": "varchar(124)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "m_pass": {
+          "name": "m_pass",
+          "type": "varchar(60)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "m_role": {
+          "name": "m_role",
+          "type": "enum('ADMIN','PROFESSOR','STUDENT')",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'STUDENT'"
+        },
+        "m_created_at": {
+          "name": "m_created_at",
+          "type": "datetime(3)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "t_users_m_uuid": {
+          "name": "t_users_m_uuid",
+          "columns": [
+            "m_uuid"
+          ]
+        }
+      },
+      "uniqueConstraints": {
+        "t_users_m_email_unique": {
+          "name": "t_users_m_email_unique",
+          "columns": [
+            "m_email"
+          ]
+        }
+      },
+      "checkConstraint": {}
+    },
+    "t_users_subjects_exams": {
+      "name": "t_users_subjects_exams",
+      "columns": {
+        "m_uuid": {
+          "name": "m_uuid",
+          "type": "varchar(36)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "m_note": {
+          "name": "m_note",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "m_created_at": {
+          "name": "m_created_at",
+          "type": "datetime(3)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": "CURRENT_TIMESTAMP"
+        },
+        "m_user_uuid": {
+          "name": "m_user_uuid",
+          "type": "varchar(36)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "m_subjects_exams_uuid": {
+          "name": "m_subjects_exams_uuid",
+          "type": "varchar(36)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "t_users_subjects_exams_m_user_uuid_t_users_m_uuid_fk": {
+          "name": "t_users_subjects_exams_m_user_uuid_t_users_m_uuid_fk",
+          "tableFrom": "t_users_subjects_exams",
+          "tableTo": "t_users",
+          "columnsFrom": [
+            "m_user_uuid"
+          ],
+          "columnsTo": [
+            "m_uuid"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "fk_t_users_subjects_exams_m_subjects_exams_uuid_registration": {
+          "name": "fk_t_users_subjects_exams_m_subjects_exams_uuid_registration",
+          "tableFrom": "t_users_subjects_exams",
+          "tableTo": "t_subjects_exams",
+          "columnsFrom": [
+            "m_subjects_exams_uuid"
+          ],
+          "columnsTo": [
+            "m_uuid"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "t_users_subjects_exams_m_uuid": {
+          "name": "t_users_subjects_exams_m_uuid",
+          "columns": [
+            "m_uuid"
+          ]
+        }
+      },
+      "uniqueConstraints": {
+        "unq_t_users_subjects_exams_m_user_uuid_m_subjects_exams_uuid": {
+          "name": "unq_t_users_subjects_exams_m_user_uuid_m_subjects_exams_uuid",
+          "columns": [
+            "m_user_uuid",
+            "m_subjects_exams_uuid"
+          ]
+        }
+      },
+      "checkConstraint": {}
+    }
+  },
+  "views": {},
+  "_meta": {
+    "schemas": {},
+    "tables": {},
+    "columns": {}
+  },
+  "internal": {
+    "tables": {},
+    "indexes": {}
+  }
+}

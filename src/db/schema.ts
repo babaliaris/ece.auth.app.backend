@@ -113,7 +113,8 @@ export const t_exams = mysqlTable('t_exams',
   m_created_at  : datetime('m_created_at', { mode: 'date', fsp: 3 }).default(sql`CURRENT_TIMESTAMP`)
 }, (t)=>
   [
-    unique("unq_t_exams_m_semester_m_year").on(t.m_semester, t.m_year)
+    unique("unq_t_exams_m_semester_m_year").on(t.m_semester, t.m_year),
+    index("index_t_exams_m_year_m_created_at").on(t.m_year, t.m_created_at)
   ]
 );
 
